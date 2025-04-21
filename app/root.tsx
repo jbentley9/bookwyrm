@@ -1,14 +1,84 @@
+import '@mantine/core/styles.css';
+
 import {
-  isRouteErrorResponse,
+  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
+  isRouteErrorResponse,
+  useLocation,
 } from "react-router";
+import {
+  AppShell,
+  MantineProvider,
+  AppShellNavbar,
+  AppShellMain,
+  NavLink,
+  Group,
+  Text,
+  Stack,
+  Title,
+  createTheme,
+  rem,
+  UnstyledButton,
+  Box,
+} from "@mantine/core";
+import { IconHome, IconBook } from '@tabler/icons-react';
 
 import type { Route } from "./+types/root";
-import "./app.css";
+
+const theme = createTheme({
+  primaryColor: 'blue',
+  primaryShade: 6,
+  fontFamily: 'Inter, sans-serif',
+  components: {
+    AppShell: {
+      styles: {
+        main: {
+          background: '#f8f9fa',
+        },
+      },
+    },
+    NavLink: {
+      styles: {
+        root: {
+          borderRadius: '8px',
+          marginBottom: '4px',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            background: 'rgba(34, 139, 230, 0.1)',
+            transform: 'translateX(4px)',
+          },
+          '&[data-active]': {
+            background: 'rgba(34, 139, 230, 0.15)',
+            color: '#228be6',
+            fontWeight: 600,
+            transform: 'translateX(4px)',
+            '& .mantine-NavLink-label': {
+              fontWeight: 600,
+              color: '#228be6',
+            },
+            '& .mantine-NavLink-icon': {
+              color: '#228be6',
+            },
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: 0,
+              bottom: 0,
+              width: '4px',
+              background: '#228be6',
+              borderRadius: '4px 0 0 4px',
+            },
+          },
+        },
+      },
+    },
+  },
+});
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -23,26 +93,80 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <meta charSet="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <Meta />
-        <Links />
-      </head>
-      <body>
-        {children}
-        <ScrollRestoration />
-        <Scripts />
-      </body>
-    </html>
-  );
-}
-
 export default function App() {
-  return <Outlet />;
+  const location = useLocation().pathname;
+  //console.log(location);
+
+  return (
+    <MantineProvider theme={theme}>
+      <AppShell
+        layout="alt"
+        navbar={{ width: 280, breakpoint: 'sm' }}
+        padding={0}
+      >
+        <AppShellNavbar p="md" style={{ 
+          background: 'white', 
+          borderRight: '1px solid #e9ecef',
+          position: 'fixed',
+          height: '100vh',
+          top: 0,
+          left: 0,
+        }}>
+          <Box style={{ position: 'sticky', top: 0 }}>
+            <Stack gap="xl">
+              <UnstyledButton component={Link} to="/">
+                <Group>
+                  <Title order={2} style={{ 
+                    color: '#228be6',
+                    fontFamily: 'Inter, sans-serif',
+                    fontWeight: 800,
+                    letterSpacing: '-0.5px',
+                    background: 'linear-gradient(45deg, #228be6, #15aabf)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                  }}>
+                    BookWyrm
+                  </Title>
+                </Group>
+              </UnstyledButton>
+              <Stack gap={4}>
+                <NavLink
+                  component={Link}
+                  to="/"
+                  label="Home"
+                  leftSection={<IconHome size="1.2rem" stroke={1.5} />}
+                  style={{ padding: '12px 16px' }}
+                  active={location === '/'}
+                />
+                <NavLink
+                  component={Link}
+                  to="/reviews"
+                  label="Reviews"
+                  leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                  style={{ padding: '12px 16px' }}
+                  active={location === '/reviews'}
+                />
+              </Stack>
+            </Stack>
+          </Box>
+        </AppShellNavbar>
+        <AppShellMain style={{ 
+          padding: '32px',
+          marginLeft: '280px',
+          minHeight: '100vh',
+        }}>
+          <Box style={{ 
+            background: 'white',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          }}>
+            <Outlet />
+          </Box>
+        </AppShellMain>
+      </AppShell>
+    </MantineProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
