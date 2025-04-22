@@ -2,14 +2,27 @@ import '@mantine/core/styles.css';
 import type { Route } from "./+types/login";
 import prisma from "../db";
 import { Container, Title, Text, TextInput, PasswordInput, Button, Stack, Paper, Group } from "@mantine/core";
-import { useNavigate, useSubmit } from "react-router";
+import { redirect, useNavigate, useSubmit } from "react-router";
 import { useState } from "react";
+import { getUserId } from "../utils/auth";
 //import { notifications } from '@mantine/notifications';
+
+export async function loader({ request }: Route.LoaderArgs) {
+    //Check if user is logged in
+    const userId = await getUserId(request);
+    if (userId) {
+        return redirect("/");
+    }
+    return null;
+}
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+
+  console.log("Login action");
+  console.log(email, password);
 
   try {
     const user = await prisma.user.findUnique({
@@ -22,10 +35,12 @@ export async function action({ request }: Route.ActionArgs) {
 
     // For now, we'll just check if the password matches - would be a hash in a real app
     if (user.password !== password) {
+      console.log("Invalid email or password");
       return { error: "Invalid email or password" };
     }
 
     // Create a token here
+    console.log("Login successful");
     return { success: true, user };
   } catch (error) {
     console.error("Login error:", error);
