@@ -1,3 +1,4 @@
+import '@mantine/core/styles.css';
 import type { Route } from "./+types/home";
 //import { Welcome } from "../welcome/welcome";
 

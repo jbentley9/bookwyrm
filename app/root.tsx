@@ -23,7 +23,7 @@ import {
   createTheme,
   rem,
   UnstyledButton,
-  Box,
+  Box, ColorSchemeScript, mantineHtmlProps
 } from "@mantine/core";
 import { IconHome, IconBook } from '@tabler/icons-react';
 
@@ -51,7 +51,7 @@ const theme = createTheme({
             background: 'rgba(34, 139, 230, 0.1)',
             transform: 'translateX(4px)',
           },
-          '&[data-active]': {
+          '&[dataActive]': {
             background: 'rgba(34, 139, 230, 0.15)',
             color: '#228be6',
             fontWeight: 600,
@@ -93,11 +93,20 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export default function App() {
+export default function Layout() {
   const location = useLocation().pathname;
   //console.log(location);
 
   return (
+    <html lang="en" {...mantineHtmlProps}>
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <ColorSchemeScript />
+        <Meta />
+        <Links />
+      </head>
+      <body>
     <MantineProvider theme={theme}>
       <AppShell
         layout="alt"
@@ -106,7 +115,7 @@ export default function App() {
       >
         <AppShellNavbar p="md" style={{ 
           background: 'white', 
-          borderRight: '1px solid #e9ecef',
+          //borderRight: '1px solid #e9ecef',
           position: 'fixed',
           height: '100vh',
           top: 0,
@@ -161,11 +170,29 @@ export default function App() {
             padding: '24px',
             boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
           }}>
+            <ScrollRestoration />
             <Outlet />
           </Box>
         </AppShellMain>
       </AppShell>
     </MantineProvider>
+    </body>
+    </html>
+  );
+}
+
+export function App() {
+  return (
+    <Layout />
+      
+  );
+}
+
+export function HydrateFallback() {
+  return (
+    <main className="pt-16 p-4 container mx-auto">
+      <h1>Loading...</h1>
+    </main>
   );
 }
 
