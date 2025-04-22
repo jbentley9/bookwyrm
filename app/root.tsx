@@ -1,4 +1,5 @@
 import '@mantine/core/styles.css';
+//import { Notifications } from '@mantine/notifications';
 
 import {
   Link,
@@ -108,6 +109,7 @@ export default function Layout() {
       </head>
       <body>
     <MantineProvider theme={theme}>
+      {/* <Notifications position="bottom-left" /> */}
       <AppShell
         layout="alt"
         navbar={{ width: 280, breakpoint: 'sm' }}
