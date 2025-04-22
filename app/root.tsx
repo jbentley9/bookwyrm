@@ -17,6 +17,7 @@ import {
   AppShellNavbar,
   AppShellMain,
   NavLink,
+  Button,
   Group,
   Text,
   Stack,
@@ -160,6 +161,15 @@ export default function Layout() {
               </Stack>
             </Stack>
           </Box>
+            <Button
+                variant="subtle"
+                onClick={() => {
+                  localStorage.removeItem("user");
+                  window.location.href = "/login";
+                }}
+              >
+                Logout
+              </Button>
         </AppShellNavbar>
         <AppShellMain style={{ 
           padding: '32px',
