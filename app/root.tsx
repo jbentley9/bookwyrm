@@ -8,8 +8,12 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  data,
   isRouteErrorResponse,
   useLocation,
+  useNavigate,
+  redirect,
+  useLoaderData,
 } from "react-router";
 import {
   AppShell,
@@ -28,6 +32,8 @@ import {
   Box, ColorSchemeScript, mantineHtmlProps
 } from "@mantine/core";
 import { IconHome, IconBook } from '@tabler/icons-react';
+import { useState, useEffect } from "react";
+import { getUser } from './utils/auth-user';
 
 import type { Route } from "./+types/root";
 
@@ -95,9 +101,30 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getUser(request);
+  return { user };
+}
+
 export default function Layout() {
   const location = useLocation().pathname;
-  //console.log(location);
+  const navigate = useNavigate();
+  const { user } = useLoaderData();
+
+  useEffect(() => {
+    const storedUser = sessionStorage.getItem('user');
+    //console.log('Stored user:', storedUser);
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        //console.log('Parsed user:', parsedUser);
+      } catch (e) {
+        console.error('Error parsing user:', e);
+      }
+    }
+  }, []);
+
+  //console.log('Current user state:', user);
 
   return (
     <html lang="en" {...mantineHtmlProps}>
@@ -118,58 +145,54 @@ export default function Layout() {
       >
         <AppShellNavbar p="md" style={{ 
           background: 'white', 
-          //borderRight: '1px solid #e9ecef',
           position: 'fixed',
           height: '100vh',
           top: 0,
           left: 0,
-        }}>
-          <Box style={{ position: 'sticky', top: 0 }}>
-            <Stack gap="xl">
-              <UnstyledButton component={Link} to="/">
-                <Group>
-                  <Title order={2} style={{ 
-                    color: '#228be6',
-                    fontFamily: 'Inter, sans-serif',
-                    fontWeight: 800,
-                    letterSpacing: '-0.5px',
-                    background: 'linear-gradient(45deg, #228be6, #15aabf)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}>
-                    BookWyrm
-                  </Title>
-                </Group>
-              </UnstyledButton>
-              <Stack gap={4}>
-                <NavLink
-                  component={Link}
-                  to="/"
-                  label="Home"
-                  leftSection={<IconHome size="1.2rem" stroke={1.5} />}
-                  style={{ padding: '12px 16px' }}
-                  active={location === '/'}
-                />
-                <NavLink
-                  component={Link}
-                  to="/reviews"
-                  label="Reviews"
-                  leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-                  style={{ padding: '12px 16px' }}
-                  active={location === '/reviews'}
-                />
-              </Stack>
-            </Stack>
-          </Box>
-            <Button
-                variant="subtle"
-                onClick={() => {
-                  localStorage.removeItem("user");
-                  window.location.href = "/login";
-                }}
-              >
-                Logout
-              </Button>
+        }}>   
+        <AppShell.Section>
+          <UnstyledButton component={Link} to="/">
+            <Group>
+              <Title order={2} style={{ 
+                color: '#228be6',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 800,
+                letterSpacing: '-0.5px',
+                background: 'linear-gradient(45deg, #228be6, #15aabf)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>
+                BookWyrm
+              </Title>
+            </Group>
+          </UnstyledButton>
+          <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
+        </AppShell.Section>
+        <AppShell.Section>
+          <Stack gap={4}>
+            <NavLink
+              component={Link}
+              to="/"
+              label="Home"
+              leftSection={<IconHome size="1.2rem" stroke={1.5} />}
+              style={{ padding: '12px 16px' }}
+              active={location === '/'}
+            />
+            <NavLink
+              component={Link}
+              to="/reviews"
+              label="Reviews"
+              leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+              style={{ padding: '12px 16px' }}
+              active={location === '/reviews'}
+            />
+          </Stack>
+        </AppShell.Section>
+            
+          
+          <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
+            <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
+          </AppShell.Section>
         </AppShellNavbar>
         <AppShellMain style={{ 
           padding: '32px',

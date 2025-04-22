@@ -10,7 +10,7 @@ export async function authenticateUser(email: string, password: string) {
   }
 
   // For now, we'll just compare passwords directly
-  // In production, you'd want to use bcrypt or similar
+  // In production, I would use bcrypt or preferred hash function
   if (user.password !== password) {
     return null;
   }

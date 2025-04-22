@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AgGridReact } from "ag-grid-react";
-import reviews, { addReview, type Review } from "./reviews";
+import { addReview, type Review } from "./reviews";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
 import {
@@ -12,10 +12,6 @@ import {
   Text,
   Box,
 } from "@mantine/core";
-import { redirect, type LoaderFunctionArgs } from "react-router";
-
-
-
 
 export default function ReviewsGridPage() {
   const [rowData, setRowData] = useState<Review[]>([...reviews]);

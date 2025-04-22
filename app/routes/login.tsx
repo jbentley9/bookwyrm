@@ -4,25 +4,31 @@ import { Container, Title, Text, TextInput, PasswordInput, Button, Stack, Paper,
 import { data, redirect, useNavigate } from "react-router";
 import { useState } from "react";
 import { authenticateUser } from "../utils/auth";
-import { userCookie } from "../utils/auth-cookie";
+import { getSession, commitSession } from "../sessions.server";
 
-
+// Loader function to get the user from the cookie
 export async function loader({
     request,
   }: Route.LoaderArgs) {
-    const cookieHeader = request.headers.get("Cookie");
-    const cookie = (await userCookie.parse(cookieHeader)) || {};
-    return data({ User: cookie.user });
+    const session = await getSession(request.headers.get("Cookie"));
+    const user = session.data.user;
+    if (user) {
+        return redirect("/");
+    }
+    return data(
+        {error: session.get("error"),}, 
+        { headers: 
+            { "Set-Cookie": await commitSession(session)} }
+    );
   }
 
-
+// Action function to handle the login form submission
 export async function action({ request }: Route.ActionArgs) {
-  //console.log("Login action called");
+  const session = await getSession(request.headers.get("Cookie"));
   
   let email: string;
   let password: string;
 
-  // Check content type to determine how to parse the data
   const contentType = request.headers.get('Content-Type');
   if (contentType?.includes('application/json')) {
     const data = await request.json();
@@ -33,28 +39,21 @@ export async function action({ request }: Route.ActionArgs) {
     email = formData.get('email') as string;
     password = formData.get('password') as string;
   }
-  
-  //console.log("Request data:", { email, password });
 
   const user = await authenticateUser(email, password);
-  //console.log("Authentication result:", user);
   
   if (!user) {
     return { error: "Invalid email or password" };
   }
 
+  // Store user in server session
+  session.set('user', user);
 
-
-  const cookieHeader = request.headers.get('Cookie');
-  const cookie = (await userCookie.parse(cookieHeader)) || {};
-  cookie.user = user;
-  const newCookieHeader = await userCookie.serialize(cookie);
-
-  return redirect('/', { headers: { 'Set-Cookie': newCookieHeader } });
-
-  //console.log("User stored in session");
-  
-  return { user };
+  return redirect('/', {
+    headers: {
+      'Set-Cookie': await commitSession(session)
+    }
+  });
 }
 
 export default function Login() {
@@ -63,7 +62,6 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    //console.log("handleSubmit called");
     event.preventDefault();
     setLoading(true);
     setError(null);
@@ -71,9 +69,7 @@ export default function Login() {
     const formData = new FormData(event.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-    
-    //console.log("Form data before submission:", { email, password });
-    
+
     try {
       const response = await fetch('/login', {
         method: 'POST',
@@ -83,20 +79,16 @@ export default function Login() {
         body: JSON.stringify({ email, password }),
       });
       
-      //console.log("Response received:", response);
       const data = await response.json();
-      //console.log("Response data:", data);
       
       if (data.error) {
         setError(data.error);
       } else {
-        // Store user in session
-        //sessionStorage.setItem('user', JSON.stringify(data.user));
-        //console.log("User stored in session from response");
+        // Store user in sessionStorage on successful login
+        sessionStorage.setItem('user', JSON.stringify(data.user));
         navigate('/');
       }
     } catch (err) {
-      //console.error("Login error:", err);
       setError('An error occurred during login');
     } finally {
       setLoading(false);
