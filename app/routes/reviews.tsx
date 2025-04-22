@@ -1,12 +1,32 @@
+import '@mantine/core/styles.css';
 import type { Route } from "./+types/reviews";
-
 import prisma from "../db"; 
-import { Button, Container, Group, Stack, Title, Text } from "@mantine/core";
-import { IconPlus } from "@tabler/icons-react";
+import { Button, Container, Group, Stack, Title, Text, Card, Rating, Avatar, Badge } from "@mantine/core";
+import { IconPlus, IconUser } from "@tabler/icons-react";
 import { useLoaderData, useNavigate } from "react-router";
+import { format } from 'date-fns';
+
+type Review = {
+  id: string;
+  rating: number;
+  review: string;
+  createdAt: Date;
+  updatedAt: Date;
+  user: {
+    id: string;
+    name: string;
+    _count: {
+      reviews: number;
+    };
+  };
+  book: {
+    id: string;
+    title: string;
+  };
+};
 
 export async function loader({ request }: Route.LoaderArgs) {
-  
+  //console.log('Loader function called');
   const reviews = await prisma.review.findMany({
     include: {
       user: {
@@ -41,12 +61,22 @@ export async function loader({ request }: Route.LoaderArgs) {
     ]
   });
 
+  //console.log('Reviews fetched');
   return { reviews };
 }
 
 export default function Review({ loaderData }: Route.ComponentProps) {
+  //console.log('Component rendered with loaderData:', loaderData);
   const { reviews } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+
+  if (!reviews) {
+    return <Text>Loading reviews...</Text>;
+  }
+
+  if (reviews.length === 0) {
+    return <Text>No reviews found.</Text>;
+  }
 
   return (
     <Container size="lg" py="xl">
@@ -61,24 +91,44 @@ export default function Review({ loaderData }: Route.ComponentProps) {
           </Button>
         </Group>
 
-        {reviews.length === 0 ? (
-          <Text>No reviews yet. Be the first to add one!</Text>
-        ) : (
-          <Stack gap="md">
-            {reviews.map((review) => (
-              <div key={review.id}>
-                <Text size="lg" fw={500}>
-                  {review.book.title}
-                </Text>
-                <Text c="dimmed">by {review.user.name}</Text>
-                <Text>{review.review}</Text>
-                <Text c="dimmed" size="sm">
-                  {review.user._count.reviews >= 3 ? "⭐ Premier Reviewer" : ""}
-                </Text>
-              </div>
-            ))}
-          </Stack>
-        )}
+        <Stack gap="md">
+          {reviews.map((review) => (
+            <Card key={review.id} withBorder padding="lg" radius="md">
+              <Group justify="space-between" mb="xs">
+                <Group>
+                  <Avatar color="blue" radius="xl">
+                    <IconUser size="1.5rem" />
+                  </Avatar>
+                  <div>
+                    <Group>
+                    <Text fw={500}>{review.user.name}</Text>
+                    <Text size="xs" c="dimmed">
+                      {format(new Date(review.createdAt), 'MMM d, yyyy')}
+                    </Text>
+                    {review.user._count.reviews >= 1 && (
+                    <Badge color="blue" variant="light">
+                      Premier Reviewer
+                    </Badge>
+                  )}
+                    </Group>
+                  </div>
+                </Group>
+                <Group>
+                  <Rating value={review.rating} readOnly />
+                  
+                </Group>
+              </Group>
+
+              <Text fw={500} size="lg" mt="md">
+                {review.book.title}
+              </Text>
+
+              <Text mt="xs" c="dimmed" size="sm">
+                {review.review}
+              </Text>
+            </Card>
+          ))}
+        </Stack>
       </Stack>
     </Container>
   );
