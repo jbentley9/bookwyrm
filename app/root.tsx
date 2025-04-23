@@ -1,6 +1,9 @@
 import '@mantine/core/styles.css';
 //import { Notifications } from '@mantine/notifications';
 
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-quartz.css";
+
 import {
   Link,
   Links,
@@ -111,20 +114,19 @@ export default function Layout() {
   const navigate = useNavigate();
   const { user } = useLoaderData();
 
+  // Check if we're on the reviews grid route
+  const isReviewsGrid = location === '/reviews.grid';
+
   useEffect(() => {
     const storedUser = sessionStorage.getItem('user');
-    //console.log('Stored user:', storedUser);
     if (storedUser) {
       try {
-        const parsedUser = JSON.parse(storedUser);
-        //console.log('Parsed user:', parsedUser);
+        JSON.parse(storedUser);
       } catch (e) {
         console.error('Error parsing user:', e);
       }
     }
   }, []);
-
-  //console.log('Current user state:', user);
 
   return (
     <html lang="en" {...mantineHtmlProps}>
@@ -136,82 +138,125 @@ export default function Layout() {
         <Links />
       </head>
       <body>
-    <MantineProvider theme={theme}>
-      {/* <Notifications position="bottom-left" /> */}
-      <AppShell
-        layout="alt"
-        navbar={{ width: 280, breakpoint: 'sm' }}
-        padding={0}
-      >
-        <AppShellNavbar p="md" style={{ 
-          background: 'white', 
-          position: 'fixed',
-          height: '100vh',
-          top: 0,
-          left: 0,
-        }}>   
-        <AppShell.Section>
-          <UnstyledButton component={Link} to="/">
-            <Group>
-              <Title order={2} style={{ 
-                color: '#228be6',
-                fontFamily: 'Inter, sans-serif',
-                fontWeight: 800,
-                letterSpacing: '-0.5px',
-                background: 'linear-gradient(45deg, #228be6, #15aabf)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>
-                BookWyrm
-              </Title>
-            </Group>
-          </UnstyledButton>
-          <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
-        </AppShell.Section>
-        <AppShell.Section>
-          <Stack gap={4}>
-            <NavLink
-              component={Link}
-              to="/"
-              label="Home"
-              leftSection={<IconHome size="1.2rem" stroke={1.5} />}
-              style={{ padding: '12px 16px' }}
-              active={location === '/'}
-            />
-            <NavLink
-              component={Link}
-              to="/reviews"
-              label="Reviews"
-              leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-              style={{ padding: '12px 16px' }}
-              active={location === '/reviews'}
-            />
-          </Stack>
-        </AppShell.Section>
-            
-          
-          <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
-            <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
-          </AppShell.Section>
-        </AppShellNavbar>
-        <AppShellMain style={{ 
-          padding: '32px',
-          marginLeft: '280px',
-          minHeight: '100vh',
-        }}>
-          <Box style={{ 
-            background: 'white',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          }}>
-            <ScrollRestoration />
-            <Outlet />
-          </Box>
-        </AppShellMain>
-      </AppShell>
-    </MantineProvider>
-    </body>
+        <MantineProvider theme={theme}>
+          {isReviewsGrid ? (
+            <div style={{ display: 'flex' }}>
+              <AppShellNavbar p="md" style={{ 
+                background: 'white', 
+                position: 'fixed',
+                height: '100vh',
+                top: 0,
+                left: 0,
+                width: 280,
+              }}>   
+                <AppShell.Section>
+                  <UnstyledButton component={Link} to="/">
+                    <Group>
+                      <Title order={2} style={{ 
+                        color: '#228be6',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 800,
+                        letterSpacing: '-0.5px',
+                        background: 'linear-gradient(45deg, #228be6, #15aabf)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}>
+                        BookWyrm
+                      </Title>
+                    </Group>
+                  </UnstyledButton>
+                  <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
+                </AppShell.Section>
+                <AppShell.Section>
+                  <Stack gap={4}>
+                    <NavLink
+                      component={Link}
+                      to="/"
+                      label="Home"
+                      leftSection={<IconHome size="1.2rem" stroke={1.5} />}
+                      style={{ padding: '12px 16px' }}
+                    />
+                    <NavLink
+                      component={Link}
+                      to="/all-reviews"
+                      label="Reviews"
+                      leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                      style={{ padding: '12px 16px' }}
+                    />
+                  </Stack>
+                </AppShell.Section>
+                <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
+                  <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
+                </AppShell.Section>
+              </AppShellNavbar>
+              <div style={{ marginLeft: 280, width: 'calc(100% - 280px)' }}>
+                <Outlet />
+              </div>
+            </div>
+          ) : (
+            <AppShell
+              layout="alt"
+              navbar={{ width: 280, breakpoint: 'sm' }}
+              padding={0}
+            >
+              <AppShellNavbar p="md" style={{ 
+                background: 'white', 
+                position: 'fixed',
+                height: '100vh',
+                top: 0,
+                left: 0,
+              }}>   
+                <AppShell.Section>
+                  <UnstyledButton component={Link} to="/">
+                    <Group>
+                      <Title order={2} style={{ 
+                        color: '#228be6',
+                        fontFamily: 'Inter, sans-serif',
+                        fontWeight: 800,
+                        letterSpacing: '-0.5px',
+                        background: 'linear-gradient(45deg, #228be6, #15aabf)',
+                        WebkitBackgroundClip: 'text',
+                        WebkitTextFillColor: 'transparent',
+                      }}>
+                        BookWyrm
+                      </Title>
+                    </Group>
+                  </UnstyledButton>
+                  <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
+                </AppShell.Section>
+                <AppShell.Section>
+                  <Stack gap={4}>
+                    <NavLink
+                      component={Link}
+                      to="/"
+                      label="Home"
+                      leftSection={<IconHome size="1.2rem" stroke={1.5} />}
+                      style={{ padding: '12px 16px' }}
+                      active={location === '/'}
+                    />
+                    <NavLink
+                      component={Link}
+                      to="/all-reviews"
+                      label="Reviews"
+                      leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                      style={{ padding: '12px 16px' }}
+                      active={location === '/all-reviews'}
+                    />
+                  </Stack>
+                </AppShell.Section>
+                <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
+                  <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
+                </AppShell.Section>
+              </AppShellNavbar>
+              <AppShellMain>
+                <Outlet />
+              </AppShellMain>
+            </AppShell>
+          )}
+          <ScrollRestoration />
+          <Scripts />
+        </MantineProvider>
+      </body>
     </html>
   );
 }

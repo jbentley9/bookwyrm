@@ -1,93 +1,85 @@
-import { useState } from "react";
+import prisma from "../db";
+import type { Route } from "./+types/reviews";
 import { AgGridReact } from "ag-grid-react";
-import { addReview, type Review } from "./reviews";
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
-import {
-  TextInput,
-  NumberInput,
-  Button,
-  Stack,
-  Group,
-  Text,
-  Box,
-} from "@mantine/core";
+import { useState } from "react";
+import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
+import type { ColDef } from "ag-grid-community";
+import { useLoaderData, type LoaderFunctionArgs } from "react-router";
 
-export default function ReviewsGridPage() {
-  const [rowData, setRowData] = useState<Review[]>([...reviews]);
+ModuleRegistry.registerModules([AllCommunityModule]);
 
-  const [form, setForm] = useState<Omit<Review, "id">>({
-    user: "",
-    book: "",
-    rating: 3,
-    review: "",
+type Review = {
+  id: string;
+  rating: number;
+  review: string;
+  user: {
+    name: string;
+  };
+  book: {
+    title: string;
+  };
+};
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const reviews = await prisma.review.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+      book: {
+        select: {
+          id: true,
+          title: true
+        }
+      }
+    }
   });
+  console.log('Reviews fetched:', reviews);
+  return { reviews };
+}
 
-  const columnDefs = [
-    { field: "user", editable: true },
-    { field: "book", editable: true },
-    { field: "rating", editable: true },
-    { field: "review", editable: true },
-    {
-      field: "actions",
-      cellRenderer: (params: any) => (
-        <Button color="red" size="xs" onClick={() => handleDelete(params.data.id)}>
-          Delete
-        </Button>
-      ),
-    },
-  ];
+export default function ReviewsGrid({ loaderData }: { loaderData: { reviews: Review[] } }) {
+  
+  
+  const [rowData] = useState(loaderData.reviews);
+  console.log('rowData:', rowData);
+  
+  const [colDefs] = useState<ColDef<Review>[]>([
+    { field: 'book.title' },
+    { field: 'user.name' },
+    { field: 'rating' },
+    { field: 'review' }
+  ]);
 
-  const handleDelete = (id: number) => {
-    deleteReview(id);
-    setRowData((prev) => prev.filter((r) => r.id !== id));
-  };
+  console.log(colDefs);
 
-  const handleAdd = () => {
-    if (!form.user || !form.book || !form.review) return;
-    const added = addReview(form);
-    setRowData((prev) => [...prev, added]);
-    setForm({ user: "", book: "", rating: 3, review: "" });
-  };
+  if (!loaderData.reviews || loaderData.reviews.length === 0) {
+    return <div>No reviews to display</div>;
+  }
 
   return (
-    <div>
-      <Text size="xl" fw={700} mb="md">
-        📄 Manage Reviews
-      </Text>
-
-      <Box className="ag-theme-alpine" style={{ height: 400, width: "100%", marginBottom: 20 }}>
-        <AgGridReact rowData={rowData} columnDefs={columnDefs} />
-      </Box>
-
-      <Stack maw={600}>
-        <Text fw={600}>➕ Add New Review</Text>
-        <Group grow>
-          <TextInput
-            label="User"
-            value={form.user}
-            onChange={(e) => setForm((f) => ({ ...f, user: e.target.value }))}
-          />
-          <TextInput
-            label="Book"
-            value={form.book}
-            onChange={(e) => setForm((f) => ({ ...f, book: e.target.value }))}
-          />
-          <NumberInput
-            label="Rating"
-            value={form.rating}
-            onChange={(value) => setForm((f) => ({ ...f, rating: value || 0 }))}
-            min={1}
-            max={5}
-          />
-        </Group>
-        <TextInput
-          label="Review Text"
-          value={form.review}
-          onChange={(e) => setForm((f) => ({ ...f, review: e.target.value }))}
-        />
-        <Button onClick={handleAdd}>Submit</Button>
-      </Stack>
+    <div className="ag-theme-quartz" style={{ height: '500px', width: '100%' }}>
+      <AgGridReact
+        rowData={rowData}
+        columnDefs={colDefs}
+        defaultColDef={{
+          sortable: true,
+          filter: true
+        }}
+      />
     </div>
   );
 }
+
+export async function action({ request }: { request: Request }) {
+  const formData = await request.formData();
+  const _action = formData.get("_action");
+  const reviewId = formData.get("reviewId");
+  
+  return null
+}
+
+
