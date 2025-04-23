@@ -41,13 +41,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 }
 
 export default function Layout() {
-  const location = useLocation().pathname;
   const { user } = useLoaderData();
 
-  // Check if we're on an API route
-  const isApiRoute = location.startsWith('/api/');
-  // Check if we're on the reviews grid route
-  const isReviewsGrid = location === '/reviews-grid';
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('user');
@@ -60,10 +55,6 @@ export default function Layout() {
     }
   }, []);
 
-  // For API routes, don't render anything - let the API route handle the response
-  if (isApiRoute) {
-    return <Outlet />;
-  }
 
   return (
     <html lang="en" {...mantineHtmlProps}>
@@ -75,13 +66,7 @@ export default function Layout() {
         <Links />
       </head>
       <body>
-        {isApiRoute ? (
-          <Outlet />
-        ) : isReviewsGrid ? (
-          <Outlet />
-        ) : (
-          <MantineLayout user={user} />
-        )}
+        <MantineLayout user={user} />
         <ScrollRestoration />
         <Scripts />
       </body>

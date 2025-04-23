@@ -10,9 +10,11 @@ import {
   Title,
   createTheme,
   UnstyledButton,
+  Text,
+  Avatar,
 } from "@mantine/core";
 import { Link } from "react-router";
-import { IconHome, IconBook } from '@tabler/icons-react';
+import { IconHome, IconBook, IconUser } from '@tabler/icons-react';
 import { Outlet } from "react-router";
 
 const theme = createTheme({
@@ -88,6 +90,8 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
           height: '100vh',
           top: 0,
           left: 0,
+          display: 'flex',
+          flexDirection: 'column'
         }}>   
           <AppShell.Section>
             <UnstyledButton component={Link} to="/">
@@ -105,9 +109,25 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                 </Title>
               </Group>
             </UnstyledButton>
-            <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
+            <div style={{ 
+              marginTop: '16px',
+              padding: '12px',
+              borderRadius: '8px',
+              background: 'rgba(34, 139, 230, 0.1)',
+              display: user ? "block" : "none"
+            }}>
+              <Group>
+                <Avatar color="blue" radius="xl">
+                  <IconUser size="1.5rem" />
+                </Avatar>
+                <div>
+                  <Text size="sm" c="dimmed">Welcome back,</Text>
+                  <Text fw={500}>{user?.name}</Text>
+                </div>
+              </Group>
+            </div>
           </AppShell.Section>
-          <AppShell.Section>
+          <AppShell.Section grow>
             <Stack gap={4}>
               <NavLink
                 component={Link}
@@ -125,8 +145,20 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
               />
             </Stack>
           </AppShell.Section>
-          <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
-            <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
+          <AppShell.Section style={{ display: user ? "block" : "none"}}>
+            <Title order={5} ta="center"> - Admin - </Title>
+            <Stack gap={4}>
+              <NavLink
+                component={Link}
+                to="/reviews-grid"
+                label="Manage Reviews"
+                leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                style={{ padding: '12px 16px' }}
+              />
+            </Stack>
+          </AppShell.Section>
+          <AppShell.Section>
+            <Button component={Link} to={user ? "/logout" : "/login"} fullWidth>{user ? "Logout" : "Login"}</Button>
           </AppShell.Section>
         </AppShellNavbar>
         <AppShellMain>

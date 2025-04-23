@@ -1,7 +1,7 @@
 import '@mantine/core/styles.css';
 import type { Route } from "./+types/login";
 import { Container, Title, Text, TextInput, PasswordInput, Button, Stack, Paper, Group } from "@mantine/core";
-import { data, redirect, useNavigate } from "react-router";
+import { data, redirect, useNavigate, useActionData, Form } from "react-router";
 import { useState } from "react";
 import { authenticateUser } from "../utils/auth";
 import { getSession, commitSession } from "../sessions.server";
@@ -26,19 +26,9 @@ export async function loader({
 export async function action({ request }: Route.ActionArgs) {
   const session = await getSession(request.headers.get("Cookie"));
   
-  let email: string;
-  let password: string;
-
-  const contentType = request.headers.get('Content-Type');
-  if (contentType?.includes('application/json')) {
-    const data = await request.json();
-    email = data.email;
-    password = data.password;
-  } else {
-    const formData = await request.formData();
-    email = formData.get('email') as string;
-    password = formData.get('password') as string;
-  }
+  const formData = await request.formData();
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
 
   const user = await authenticateUser(email, password);
   
@@ -59,41 +49,7 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Login() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setLoading(true);
-    setError(null);
-
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    try {
-      const response = await fetch('/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-      
-      const data = await response.json();
-      
-      if (data.error) {
-        setError(data.error);
-      } else {
-        // Store user in sessionStorage on successful login
-        sessionStorage.setItem('user', JSON.stringify(data.user));
-        navigate('/');
-      }
-    } catch (err) {
-      setError('An error occurred during login');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const actionData = useActionData<typeof action>();
 
   return (
     <Container size={420} my={40}>
@@ -117,11 +73,11 @@ export default function Login() {
       </Text>
 
       <Paper withBorder shadow="md" p={30} mt={30} radius="md">
-        <form onSubmit={handleSubmit} method="post">
+        <Form method="post">
           <Stack>
-            {error && (
+            {actionData?.error && (
               <Text c="red" size="sm">
-                {error}
+                {actionData.error}
               </Text>
             )}
             <TextInput
@@ -154,7 +110,7 @@ export default function Login() {
               Sign in
             </Button>
           </Stack>
-        </form>
+        </Form>
       </Paper>
     </Container>
   );

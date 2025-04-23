@@ -22,7 +22,6 @@ interface ReviewsGridLayoutProps {
 
 export default function ReviewsGridLayout({ user }: ReviewsGridLayoutProps) {
   return (
-    
     <div style={{ display: 'flex' }}>
       <AppShellNavbar p="md" style={{ 
         background: 'white', 
