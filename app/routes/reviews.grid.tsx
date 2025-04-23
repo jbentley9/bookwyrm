@@ -219,7 +219,6 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
       });
       
       if (response.ok) {
-        // Remove the row immediately from the grid
         props.api?.applyTransaction({
           remove: [data]
         });
@@ -237,18 +236,30 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
     <button 
       onClick={handleDelete}
       style={{
-        background: 'none',
+        background: 'transparent',
         color: '#ff4444',
-        border: 'none',
-        padding: '4px',
+        border: '1px solid #ff4444',
+        borderRadius: '4px',
+        padding: '4px 8px',
         cursor: 'pointer',
-        marginRight: '8px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        gap: '4px',
+        fontSize: '12px',
+        transition: 'all 0.2s ease',
+        height: '28px'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = '#ff4444';
+        e.currentTarget.style.color = 'white';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = '#ff4444';
       }}
     >
-      <IconTrash size={20} />
+      <IconTrash size={16} />
+      Delete
     </button>
   );
 }
@@ -302,24 +313,113 @@ function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
     setIsEditing(false);
   };
 
+  const buttonColor = isEditing ? '#4CAF50' : '#228be6';
+
   return (
     <button 
       onClick={isEditing ? handleSave : handleEdit}
       style={{
-        background: 'none',
-        color: isEditing ? '#4CAF50' : '#2196F3',
-        border: 'none',
-        padding: '4px',
+        background: 'transparent',
+        color: buttonColor,
+        border: `1px solid ${buttonColor}`,
+        borderRadius: '4px',
+        padding: '4px 8px',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        gap: '4px',
+        fontSize: '12px',
+        transition: 'all 0.2s ease',
+        height: '28px'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.background = buttonColor;
+        e.currentTarget.style.color = 'white';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.color = buttonColor;
       }}
     >
-      <IconPencil size={20} />
+      <IconPencil size={16} />
+      {isEditing ? 'Save' : 'Edit'}
     </button>
   );
 }
+
+// Add custom CSS styles for AG Grid
+const customGridStyles = `
+  .ag-theme-alpine {
+    --ag-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --ag-font-size: 14px;
+    --ag-border-radius: 4px;
+    --ag-cell-horizontal-padding: 12px;
+    --ag-header-height: 48px;
+    --ag-row-height: 48px;
+    
+    /* Colors to match Mantine */
+    --ag-background-color: #ffffff;
+    --ag-header-background-color: #f8f9fa;
+    --ag-odd-row-background-color: #f8f9fa;
+    --ag-header-foreground-color: #212529;
+    --ag-foreground-color: #495057;
+    --ag-border-color: #e9ecef;
+    --ag-secondary-border-color: #e9ecef;
+    --ag-row-border-color: #e9ecef;
+    --ag-row-hover-color: #e9ecef;
+    --ag-selected-row-background-color: rgba(51, 154, 240, 0.1);
+    
+    /* Input styling */
+    --ag-input-border-color: #ced4da;
+    --ag-input-border-radius: 4px;
+    --ag-input-focus-border-color: #228be6;
+    
+    /* Disable alpine theme shadows */
+    --ag-card-shadow: none;
+    --ag-popup-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .ag-theme-alpine .ag-header-cell {
+    font-weight: 600;
+  }
+
+  .ag-theme-alpine .ag-cell {
+    line-height: 1.5;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Special handling for the Actions column that contains buttons */
+  .ag-theme-alpine .ag-cell:last-child > div {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+
+  .ag-theme-alpine .ag-paging-panel {
+    border-top: 1px solid var(--ag-border-color);
+    padding: 12px;
+  }
+
+  .ag-theme-alpine .ag-paging-button {
+    border: 1px solid var(--ag-border-color);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin: 0 2px;
+  }
+
+  .ag-theme-alpine .ag-paging-button:hover:not(.ag-disabled) {
+    background-color: var(--ag-row-hover-color);
+  }
+
+  /* Ensure header cells are also vertically centered */
+  .ag-theme-alpine .ag-header-cell-label {
+    display: flex;
+    align-items: center;
+    height: 100%;
+  }
+`;
 
 export default function ReviewsGrid() {
   console.time('Component Render');
@@ -371,7 +471,7 @@ export default function ReviewsGrid() {
     },
     { 
       headerName: 'Actions',
-      width: 100,
+      width: 160,
       cellRenderer: (params: ICellRendererParams<Review>) => (
         <div style={{ display: 'flex', gap: '8px' }}>
           <UpdateButtonRenderer {...params} />
@@ -480,6 +580,16 @@ export default function ReviewsGrid() {
     console.time('First Data Rendered');
   }, []);
 
+  // Add style tag to the document
+  useEffect(() => {
+    const styleTag = document.createElement('style');
+    styleTag.innerHTML = customGridStyles;
+    document.head.appendChild(styleTag);
+    return () => {
+      document.head.removeChild(styleTag);
+    };
+  }, []);
+
   return (
     <div style={{ 
       height: '100vh',
@@ -523,7 +633,9 @@ export default function ReviewsGrid() {
       <div className="ag-theme-alpine" style={{ 
         flex: 1,
         minHeight: 0,
-        width: '100%'
+        width: '100%',
+        borderRadius: '8px',
+        overflow: 'hidden'
       }}>
         <AgGridReact
           ref={gridRef}
@@ -537,7 +649,8 @@ export default function ReviewsGrid() {
           }}
           domLayout="normal"
           animateRows={false}
-          rowHeight={80}
+          rowHeight={48}
+          headerHeight={48}
           onCellValueChanged={onCellValueChanged}
           onGridReady={onGridReady}
           pagination={true}
@@ -546,7 +659,6 @@ export default function ReviewsGrid() {
           // Theme configuration
           theme="legacy"
           // Modern performance settings
-          rowSelection={{ mode: 'singleRow' }}
           cellSelection={false}
           loading={false}
           // Performance optimizations
@@ -566,6 +678,8 @@ export default function ReviewsGrid() {
           maxBlocksInCache={10}
           // Disable unnecessary animations
           suppressRowHoverHighlight={true}
+          suppressCellFocus={true}
+          enableCellTextSelection={true}
           onFirstDataRendered={() => {
             console.timeEnd('First Data Rendered');
             console.time('Grid Initialization Complete');
