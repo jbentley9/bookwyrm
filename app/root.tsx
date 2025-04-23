@@ -2,94 +2,25 @@ import '@mantine/core/styles.css';
 //import { Notifications } from '@mantine/notifications';
 
 import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-quartz.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 
 import {
-  Link,
   Links,
   Meta,
   Outlet,
   Scripts,
   ScrollRestoration,
-  data,
   isRouteErrorResponse,
   useLocation,
-  useNavigate,
-  redirect,
   useLoaderData,
 } from "react-router";
-import {
-  AppShell,
-  MantineProvider,
-  AppShellNavbar,
-  AppShellMain,
-  NavLink,
-  Button,
-  Group,
-  Text,
-  Stack,
-  Title,
-  createTheme,
-  rem,
-  UnstyledButton,
-  Box, ColorSchemeScript, mantineHtmlProps
-} from "@mantine/core";
-import { IconHome, IconBook } from '@tabler/icons-react';
-import { useState, useEffect } from "react";
+import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
+import { useEffect } from "react";
 import { getUser } from './utils/auth-user';
+import MantineLayout from './components/MantineLayout';
+import ReviewsGridLayout from './components/ReviewsGridLayout';
 
 import type { Route } from "./+types/root";
-
-const theme = createTheme({
-  primaryColor: 'blue',
-  primaryShade: 6,
-  fontFamily: 'Inter, sans-serif',
-  components: {
-    AppShell: {
-      styles: {
-        main: {
-          background: '#f8f9fa',
-        },
-      },
-    },
-    NavLink: {
-      styles: {
-        root: {
-          borderRadius: '8px',
-          marginBottom: '4px',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            background: 'rgba(34, 139, 230, 0.1)',
-            transform: 'translateX(4px)',
-          },
-          '&[dataActive]': {
-            background: 'rgba(34, 139, 230, 0.15)',
-            color: '#228be6',
-            fontWeight: 600,
-            transform: 'translateX(4px)',
-            '& .mantine-NavLink-label': {
-              fontWeight: 600,
-              color: '#228be6',
-            },
-            '& .mantine-NavLink-icon': {
-              color: '#228be6',
-            },
-            '&::before': {
-              content: '""',
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              bottom: 0,
-              width: '4px',
-              background: '#228be6',
-              borderRadius: '4px 0 0 4px',
-            },
-          },
-        },
-      },
-    },
-  },
-});
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -111,11 +42,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function Layout() {
   const location = useLocation().pathname;
-  const navigate = useNavigate();
   const { user } = useLoaderData();
 
+  // Check if we're on an API route
+  const isApiRoute = location.startsWith('/api/');
   // Check if we're on the reviews grid route
-  const isReviewsGrid = location === '/reviews.grid';
+  const isReviewsGrid = location === '/reviews-grid';
 
   useEffect(() => {
     const storedUser = sessionStorage.getItem('user');
@@ -128,6 +60,11 @@ export default function Layout() {
     }
   }, []);
 
+  // For API routes, don't render anything - let the API route handle the response
+  if (isApiRoute) {
+    return <Outlet />;
+  }
+
   return (
     <html lang="en" {...mantineHtmlProps}>
       <head>
@@ -138,134 +75,22 @@ export default function Layout() {
         <Links />
       </head>
       <body>
-        <MantineProvider theme={theme}>
-          {isReviewsGrid ? (
-            <div style={{ display: 'flex' }}>
-              <AppShellNavbar p="md" style={{ 
-                background: 'white', 
-                position: 'fixed',
-                height: '100vh',
-                top: 0,
-                left: 0,
-                width: 280,
-              }}>   
-                <AppShell.Section>
-                  <UnstyledButton component={Link} to="/">
-                    <Group>
-                      <Title order={2} style={{ 
-                        color: '#228be6',
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: 800,
-                        letterSpacing: '-0.5px',
-                        background: 'linear-gradient(45deg, #228be6, #15aabf)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}>
-                        BookWyrm
-                      </Title>
-                    </Group>
-                  </UnstyledButton>
-                  <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
-                </AppShell.Section>
-                <AppShell.Section>
-                  <Stack gap={4}>
-                    <NavLink
-                      component={Link}
-                      to="/"
-                      label="Home"
-                      leftSection={<IconHome size="1.2rem" stroke={1.5} />}
-                      style={{ padding: '12px 16px' }}
-                    />
-                    <NavLink
-                      component={Link}
-                      to="/all-reviews"
-                      label="Reviews"
-                      leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-                      style={{ padding: '12px 16px' }}
-                    />
-                  </Stack>
-                </AppShell.Section>
-                <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
-                  <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
-                </AppShell.Section>
-              </AppShellNavbar>
-              <div style={{ marginLeft: 280, width: 'calc(100% - 280px)' }}>
-                <Outlet />
-              </div>
-            </div>
-          ) : (
-            <AppShell
-              layout="alt"
-              navbar={{ width: 280, breakpoint: 'sm' }}
-              padding={0}
-            >
-              <AppShellNavbar p="md" style={{ 
-                background: 'white', 
-                position: 'fixed',
-                height: '100vh',
-                top: 0,
-                left: 0,
-              }}>   
-                <AppShell.Section>
-                  <UnstyledButton component={Link} to="/">
-                    <Group>
-                      <Title order={2} style={{ 
-                        color: '#228be6',
-                        fontFamily: 'Inter, sans-serif',
-                        fontWeight: 800,
-                        letterSpacing: '-0.5px',
-                        background: 'linear-gradient(45deg, #228be6, #15aabf)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                      }}>
-                        BookWyrm
-                      </Title>
-                    </Group>
-                  </UnstyledButton>
-                  <Title order={4} display={user ? "block" : "none"}>Hi, {user?.name}</Title>
-                </AppShell.Section>
-                <AppShell.Section>
-                  <Stack gap={4}>
-                    <NavLink
-                      component={Link}
-                      to="/"
-                      label="Home"
-                      leftSection={<IconHome size="1.2rem" stroke={1.5} />}
-                      style={{ padding: '12px 16px' }}
-                      active={location === '/'}
-                    />
-                    <NavLink
-                      component={Link}
-                      to="/all-reviews"
-                      label="Reviews"
-                      leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-                      style={{ padding: '12px 16px' }}
-                      active={location === '/all-reviews'}
-                    />
-                  </Stack>
-                </AppShell.Section>
-                <AppShell.Section style={{ position: 'absolute', bottom: 10}}>
-                  <Button component={Link} to={user ? "/logout" : "/login"}>{user ? "Logout" : "Login"}</Button>
-                </AppShell.Section>
-              </AppShellNavbar>
-              <AppShellMain>
-                <Outlet />
-              </AppShellMain>
-            </AppShell>
-          )}
-          <ScrollRestoration />
-          <Scripts />
-        </MantineProvider>
+        {isApiRoute ? (
+          <Outlet />
+        ) : isReviewsGrid ? (
+          <Outlet />
+        ) : (
+          <MantineLayout user={user} />
+        )}
+        <ScrollRestoration />
+        <Scripts />
       </body>
     </html>
   );
 }
 
 export function App() {
-  return (
-    <Layout />
-      
-  );
+  return <Layout />;
 }
 
 export function HydrateFallback() {

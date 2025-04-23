@@ -4,30 +4,9 @@ import prisma from "../db";
 import { Button, Container, Group, Stack, Title, Text, Card, Rating, Avatar, Badge } from "@mantine/core";
 import { IconPlus, IconUser } from "@tabler/icons-react";
 import { useLoaderData, useNavigate } from "react-router";
-import { format } from 'date-fns';
-import ReviewsGrid from "./reviews.grid";
-
-type Review = {
-  id: string;
-  rating: number;
-  review: string;
-  createdAt: Date;
-  updatedAt: Date;
-  user: {
-    id: string;
-    name: string;
-    _count: {
-      reviews: number;
-    };
-  };
-  book: {
-    id: string;
-    title: string;
-  };
-};
 
 export async function loader({ request }: Route.LoaderArgs) {
-  console.log('Loader function called');
+  //console.log('Loader function called');
   const reviews = await prisma.review.findMany({
     include: {
       user: {
@@ -42,7 +21,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       }
     }
   });
-  console.log('Reviews fetched:', reviews);
+  //console.log('Reviews fetched:', reviews);
   return { reviews };
 }
 
@@ -50,7 +29,7 @@ export default function Reviews() {
   const { reviews } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
-  console.log('Reviews component received:', reviews);
+  //console.log('Reviews component received:', reviews);
 
   if (!reviews) {
     return <Text>Loading reviews...</Text>;
@@ -65,14 +44,48 @@ export default function Reviews() {
       <Stack gap="xl">
         <Group justify="space-between">
           <Title order={1}>Reviews</Title>
-          <Button 
+          <Button
             leftSection={<IconPlus size={14} />}
-            onClick={() => navigate("/reviews/new")}
+            onClick={() => navigate('/reviews/new')}
           >
             New Review
           </Button>
         </Group>
-        <ReviewsGrid reviews={reviews} />
+
+        <Stack gap="md">
+          {reviews.map((review) => (
+            <Card key={review.id} withBorder padding="lg" radius="md">
+              <Group justify="space-between" mb="xs">
+                <Group>
+                  <Avatar color="blue" radius="xl">
+                    <IconUser size="1.5rem" />
+                  </Avatar>
+                  <div>
+                    <Text fw={500}>{review.user.name}</Text>
+                    <Text size="xs" c="dimmed">
+                      {new Date(review.createdAt).toLocaleDateString()}
+                    </Text>
+                  </div>
+                </Group>
+                <Rating value={review.rating} readOnly />
+              </Group>
+
+              <Text fw={500} size="lg" mb="xs">
+                {review.book.title}
+              </Text>
+
+              <Text size="sm" c="dimmed" mb="md">
+                {review.review}
+              </Text>
+
+              <Group>
+                <Badge color="blue" variant="light">
+                  {review.rating} stars
+                </Badge>
+              </Group>
+            </Card>
+          ))}
+        </Stack>
       </Stack>
     </Container>
   );
