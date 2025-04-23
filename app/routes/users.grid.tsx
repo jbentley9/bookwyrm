@@ -1,5 +1,5 @@
 import prisma from "../db";
-import type { Route } from "./+types/reviews";
+import type { Route } from "./+types/users";
 import { AgGridReact } from "ag-grid-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
@@ -7,89 +7,37 @@ import type { ColDef, ICellRendererParams, ICellEditorParams, GridApi } from "ag
 import { useLoaderData, useActionData, Form, useLocation } from "react-router";
 import { IconPencil, IconTrash, IconPlus } from "@tabler/icons-react";
 import { v4 as uuidv4 } from 'uuid';
+import { Button, Modal, Select, TextInput, Stack } from "@mantine/core";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 type User = {
   id: string;
   name: string;
-};
-
-type Book = {
-  id: string;
-  title: string;
-};
-
-type Review = {
-  id: string;
-  rating: number;
-  review: string;
-  user: {
-    id: string;
-    name: string;
-  };
-  book: {
-    id: string;
-    title: string;
-  };
+  email: string;
+  tier: "BASIC" | "PREMIER";
 };
 
 type LoaderData = {
-  reviews: Review[];
-  users: { id: string; name: string; }[];
-  books: { id: string; title: string; }[];
+  users: User[];
 };
 
-// Loader function to fetch all reviews
 export async function loader({ request }: Route.LoaderArgs) {
-  console.time('Total Loader Time');
-  
-  console.time('Fetch Reviews');
-  const reviews = await prisma.review.findMany({
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-        }
-      },
-      book: {
-        select: {
-          id: true,
-          title: true
-        }
-      }
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      tier: true,
     },
     orderBy: {
       createdAt: 'desc'
     }
   });
-  console.timeEnd('Fetch Reviews');
-
-  console.time('Fetch Users');
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-    }
-  });
-  console.timeEnd('Fetch Users');
-
-  console.time('Fetch Books');
-  const books = await prisma.book.findMany({
-    select: {
-      id: true,
-      title: true,
-    }
-  });
-  console.timeEnd('Fetch Books');
-
-  console.timeEnd('Total Loader Time');
   
-  return { reviews, users, books };
+  return { users };
 }
 
-// Action function to handle operations
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const actionType = formData.get("actionType");
@@ -97,13 +45,12 @@ export async function action({ request }: Route.ActionArgs) {
   switch (actionType) {
     case "create": {
       const id = formData.get("id") as string;
-      const rating = Number(formData.get("rating"));
-      const review = formData.get("review") as string;
-      const userId = formData.get("userId") as string;
-      const bookId = formData.get("bookId") as string;
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const tier = formData.get("tier") as "BASIC" | "PREMIER";
       
-      if (!userId || !bookId) {
-        return new Response(JSON.stringify({ error: 'User and book are required' }), {
+      if (!name || !email) {
+        return new Response(JSON.stringify({ error: 'Name and email are required' }), {
           status: 400,
           headers: {
             'Content-Type': 'application/json'
@@ -112,27 +59,13 @@ export async function action({ request }: Route.ActionArgs) {
       }
       
       try {
-        const newReview = await prisma.review.create({
-      data: {
+        await prisma.user.create({
+          data: {
             id,
-            rating,
-            review,
-            userId,
-            bookId
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            book: {
-              select: {
-                id: true,
-                title: true
-              }
-            }
+            name,
+            email,
+            tier,
+            password: "changeme123" // Default password
           }
         });
         
@@ -143,8 +76,8 @@ export async function action({ request }: Route.ActionArgs) {
           }
         });
       } catch (error) {
-        console.error('Failed to create review:', error);
-        return new Response(JSON.stringify({ error: 'Failed to create review' }), {
+        console.error('Failed to create user:', error);
+        return new Response(JSON.stringify({ error: 'Failed to create user' }), {
           status: 400,
           headers: {
             'Content-Type': 'application/json'
@@ -154,23 +87,15 @@ export async function action({ request }: Route.ActionArgs) {
     }
     
     case "update": {
-      const reviewId = formData.get("reviewId") as string;
-      const rating = Number(formData.get("rating"));
-      const review = formData.get("review") as string;
-      
-      await prisma.review.update({
-        where: { id: reviewId },
-        data: { rating, review }
-      });
-      break;
-    }
-    
-    case "delete": {
-      const reviewId = formData.get("reviewId") as string;
+      const id = formData.get("id") as string;
+      const name = formData.get("name") as string;
+      const email = formData.get("email") as string;
+      const tier = formData.get("tier") as "BASIC" | "PREMIER";
       
       try {
-        await prisma.review.delete({
-          where: { id: reviewId }
+        await prisma.user.update({
+          where: { id },
+          data: { name, email, tier }
         });
         
         return new Response(JSON.stringify({ success: true }), {
@@ -180,8 +105,33 @@ export async function action({ request }: Route.ActionArgs) {
           }
         });
       } catch (error) {
-        console.error('Failed to delete review:', error);
-        return new Response(JSON.stringify({ error: 'Failed to delete review' }), {
+        console.error('Failed to update user:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update user' }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
+    }
+    
+    case "delete": {
+      const id = formData.get("id") as string;
+      
+      try {
+        await prisma.user.delete({
+          where: { id }
+        });
+        
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error('Failed to delete user:', error);
+        return new Response(JSON.stringify({ error: 'Failed to delete user' }), {
           status: 400,
           headers: {
             'Content-Type': 'application/json'
@@ -199,8 +149,7 @@ export async function action({ request }: Route.ActionArgs) {
   });
 }
 
-// Custom cell renderer for delete button
-function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
+function DeleteButtonRenderer(props: ICellRendererParams<User>) {
   const handleDelete = async (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -210,7 +159,7 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
     
     const formData = new FormData();
     formData.append('actionType', 'delete');
-    formData.append('reviewId', data.id);
+    formData.append('id', data.id);
     
     try {
       const response = await fetch(window.location.href, {
@@ -223,10 +172,10 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
           remove: [data]
         });
       } else {
-        console.error('Failed to delete review:', await response.text());
+        console.error('Failed to delete user:', await response.text());
       }
     } catch (error) {
-      console.error('Failed to delete review:', error);
+      console.error('Failed to delete user:', error);
     }
   };
 
@@ -264,8 +213,7 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
   );
 }
 
-// Custom cell renderer for update button
-function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
+function UpdateButtonRenderer(props: ICellRendererParams<User>) {
   const [isEditing, setIsEditing] = useState(false);
   const gridApi = props.api;
 
@@ -302,7 +250,7 @@ function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
     setIsEditing(true);
     gridApi?.startEditingCell({
       rowIndex: props.node.rowIndex!,
-      colKey: 'rating'
+      colKey: 'name'
     });
   };
 
@@ -421,58 +369,46 @@ const customGridStyles = `
   }
 `;
 
-export default function ReviewsGrid() {
-  console.time('Component Render');
-  const { reviews, users, books } = useLoaderData<typeof loader>();
-  console.timeEnd('Component Render');
+export default function UsersGrid() {
+  const { users } = useLoaderData<LoaderData>();
+  const gridRef = useRef<AgGridReact>(null);
+  const [gridApi, setGridApi] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [tier, setTier] = useState<"BASIC" | "PREMIER">("BASIC");
 
   // Memoize the column definitions to prevent re-renders
-  const colDefs = useMemo<ColDef<Review>[]>(() => [
+  const colDefs = useMemo<ColDef<User>[]>(() => [
     { 
-      field: 'book.title', 
-      headerName: 'Book',
-      flex: 1,
-      minWidth: 200,
-      editable: false
-    },
-    { 
-      field: 'user.name', 
-      headerName: 'User',
+      field: "name", 
+      headerName: "Name", 
       flex: 1,
       minWidth: 150,
-      editable: false
+      editable: true
     },
     { 
-      field: 'rating', 
-      headerName: 'Rating',
-      width: 100,
-      editable: true,
-      cellEditor: 'agNumberCellEditor',
-      cellEditorParams: {
-        min: 1,
-        max: 5
-      }
+      field: "email", 
+      headerName: "Email", 
+      flex: 1,
+      minWidth: 200,
+      editable: true
     },
     { 
-      field: 'review', 
-      headerName: 'Review',
-      flex: 2,
-      minWidth: 300,
-      maxWidth: 800,
-      autoHeight: true,
-      wrapText: true,
+      field: "tier", 
+      headerName: "Tier", 
+      flex: 1,
+      minWidth: 100,
       editable: true,
-      cellEditor: 'agLargeTextCellEditor',
+      cellEditor: 'agSelectCellEditor',
       cellEditorParams: {
-        maxLength: 1000,
-        rows: 10,
-        cols: 50
+        values: ['BASIC', 'PREMIER']
       }
     },
     { 
       headerName: 'Actions',
       width: 160,
-      cellRenderer: (params: ICellRendererParams<Review>) => (
+      cellRenderer: (params: ICellRendererParams<User>) => (
         <div style={{ display: 'flex', gap: '8px' }}>
           <UpdateButtonRenderer {...params} />
           <DeleteButtonRenderer {...params} />
@@ -484,59 +420,46 @@ export default function ReviewsGrid() {
     }
   ], []);
 
-  const gridRef = useRef<AgGridReact>(null);
-  const [gridApi, setGridApi] = useState<any>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [selectedBookId, setSelectedBookId] = useState<string>('');
-  const [newRating, setNewRating] = useState<number>(1);
-  const [newReview, setNewReview] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
   // Memoize the grid ready handler
   const onGridReady = useCallback((params: any) => {
-    console.time('Grid Ready');
     setGridApi(params.api);
-    console.timeEnd('Grid Ready');
   }, []);
 
   // Memoize the cell value changed handler
   const onCellValueChanged = useCallback((params: any) => {
-    if (params.column.colId === 'rating' || params.column.colId === 'review') {
-      const formData = new FormData();
-      formData.append('actionType', 'update');
-      formData.append('reviewId', params.data.id);
-      formData.append('rating', params.data.rating);
-      formData.append('review', params.data.review);
-      
-      fetch(window.location.href, {
-        method: 'POST',
-        body: formData
-      });
-    }
+    const formData = new FormData();
+    formData.append('actionType', 'update');
+    formData.append('id', params.data.id);
+    formData.append('name', params.data.name);
+    formData.append('email', params.data.email);
+    formData.append('tier', params.data.tier);
+    
+    fetch(window.location.href, {
+      method: 'POST',
+      body: formData
+    });
   }, []);
 
   // Reset form function
   const resetForm = () => {
-    setSelectedUserId('');
-    setSelectedBookId('');
-    setNewRating(1);
-    setNewReview('');
+    setName("");
+    setEmail("");
+    setTier("BASIC");
   };
 
-  // Modified handleAddReview to close modal on success
-  const handleAddReview = async () => {
-    if (!selectedUserId || !selectedBookId) {
-      alert('Please select both a user and a book');
+  // Modified handleAddUser to close modal on success
+  const handleAddUser = async () => {
+    if (!name || !email) {
+      alert('Please fill in all required fields');
       return;
     }
 
     const tempId = uuidv4();
     const tempRow = {
       id: tempId,
-      rating: newRating,
-      review: newReview,
-      user: users.find((u: User) => u.id === selectedUserId),
-      book: books.find((b: Book) => b.id === selectedBookId)
+      name,
+      email,
+      tier
     };
 
     gridApi?.applyTransaction({
@@ -545,12 +468,11 @@ export default function ReviewsGrid() {
     });
 
     const formData = new FormData();
-    formData.append('actionType', 'create');
-    formData.append('id', tempId);
-    formData.append('rating', newRating.toString());
-    formData.append('review', newReview);
-    formData.append('userId', selectedUserId);
-    formData.append('bookId', selectedBookId);
+    formData.append("actionType", "create");
+    formData.append("id", tempId);
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("tier", tier);
     
     try {
       const response = await fetch(window.location.href, {
@@ -565,10 +487,10 @@ export default function ReviewsGrid() {
         gridApi?.applyTransaction({
           remove: [tempRow]
         });
-        console.error('Failed to create review:', await response.text());
+        console.error('Failed to create user:', await response.text());
       }
     } catch (error) {
-      console.error('Failed to create review:', error);
+      console.error('Failed to create user:', error);
       gridApi?.applyTransaction({
         remove: [tempRow]
       });
@@ -576,9 +498,7 @@ export default function ReviewsGrid() {
   };
 
   // Start First Data Rendered timer
-  useEffect(() => {
-    console.time('First Data Rendered');
-  }, []);
+  useEffect(() => {}, []);
 
   // Add style tag to the document
   useEffect(() => {
@@ -609,11 +529,11 @@ export default function ReviewsGrid() {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Book Reviews</h2>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Users</h2>
         <button
           onClick={() => setIsModalOpen(true)}
           style={{
-            background: '#4CAF50',
+            background: '#40c057',
             color: 'white',
             border: 'none',
             padding: '8px 16px',
@@ -622,11 +542,18 @@ export default function ReviewsGrid() {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            fontSize: '14px'
+            fontSize: '14px',
+            fontWeight: 500
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#37b24d';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = '#40c057';
           }}
         >
           <IconPlus size={20} />
-          Add Review
+          Add User
         </button>
       </div>
 
@@ -639,7 +566,7 @@ export default function ReviewsGrid() {
       }}>
         <AgGridReact
           ref={gridRef}
-          rowData={reviews}
+          rowData={users}
           columnDefs={colDefs}
           defaultColDef={{
             resizable: true,
@@ -656,12 +583,9 @@ export default function ReviewsGrid() {
           pagination={true}
           paginationPageSize={20}
           paginationPageSizeSelector={[20, 50, 100]}
-          // Theme configuration
           theme="legacy"
-          // Modern performance settings
           cellSelection={false}
           loading={false}
-          // Performance optimizations
           suppressColumnVirtualisation={true}
           suppressRowTransform={true}
           suppressContextMenu={true}
@@ -673,18 +597,12 @@ export default function ReviewsGrid() {
           suppressFieldDotNotation={false}
           suppressMenuHide={true}
           suppressDragLeaveHidesColumns={true}
-          // Optimize rendering
           rowBuffer={20}
           maxBlocksInCache={10}
-          // Disable unnecessary animations
           suppressRowHoverHighlight={true}
           suppressCellFocus={true}
           enableCellTextSelection={true}
-          onFirstDataRendered={() => {
-            console.timeEnd('First Data Rendered');
-            console.time('Grid Initialization Complete');
-            console.timeEnd('Grid Initialization Complete');
-          }}
+          onFirstDataRendered={() => {}}
         />
       </div>
 
@@ -726,7 +644,7 @@ export default function ReviewsGrid() {
               alignItems: 'center',
               marginBottom: '20px'
             }}>
-              <h3 style={{ margin: 0, fontSize: '20px' }}>Add New Review</h3>
+              <h3 style={{ margin: 0, fontSize: '20px' }}>Add New User</h3>
               <button
                 onClick={() => {
                   setIsModalOpen(false);
@@ -746,51 +664,11 @@ export default function ReviewsGrid() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Select Book</label>
-                <select
-                  value={selectedBookId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedBookId(e.target.value)}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
-                >
-                  <option value="">Choose a book</option>
-                  {books.map((book: Book) => (
-                    <option key={book.id} value={book.id}>{book.title}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Select User</label>
-                <select
-                  value={selectedUserId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
-                >
-                  <option value="">Choose a user</option>
-                  {users.map((user: User) => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Rating</label>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Name</label>
                 <input
-                  type="number"
-                  min="1"
-                  max="5"
-                  value={newRating}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewRating(Number(e.target.value))}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Enter name"
                   style={{ 
                     width: '100%',
                     padding: '8px',
@@ -801,35 +679,59 @@ export default function ReviewsGrid() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Review</label>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Email</label>
                 <input
-                  type="text"
-                  value={newReview}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewReview(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="Enter email"
                   style={{ 
                     width: '100%',
                     padding: '8px',
                     borderRadius: '4px',
                     border: '1px solid #ddd'
                   }}
-                  placeholder="Write your review"
                 />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '8px' }}>Tier</label>
+                <select
+                  value={tier}
+                  onChange={(e) => setTier(e.target.value as "BASIC" | "PREMIER")}
+                  style={{ 
+                    width: '100%',
+                    padding: '8px',
+                    borderRadius: '4px',
+                    border: '1px solid #ddd'
+                  }}
+                >
+                  <option value="BASIC">Basic</option>
+                  <option value="PREMIER">Premier</option>
+                </select>
               </div>
 
               <button
-                onClick={handleAddReview}
+                onClick={handleAddUser}
                 style={{
-                  background: '#4CAF50',
+                  background: '#40c057',
                   color: 'white',
                   border: 'none',
-                  padding: '8px 16px',
                   borderRadius: '4px',
+                  padding: '8px 16px',
                   cursor: 'pointer',
+                  fontSize: '14px',
+                  width: '100%',
                   marginTop: '8px',
-                  width: '100%'
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#37b24d';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = '#40c057';
                 }}
               >
-                Add Review
+                Add User
               </button>
             </div>
           </div>
@@ -837,6 +739,4 @@ export default function ReviewsGrid() {
       )}
     </div>
   );
-}
-
-
+} 

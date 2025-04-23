@@ -5,7 +5,9 @@ export default [
     route("all-reviews", "routes/reviews.tsx"),
     route("login", "routes/login.tsx"),
     route("reviews-grid", "routes/reviews.grid.tsx"),
+    route("books-grid", "routes/books.grid.tsx"),
+    route("users-grid", "routes/users.grid.tsx"),
     route("logout", "routes/logout.tsx"),
-    route("api/reviews", "routes/api.reviews.tsx"),
-    route("api/reviews/:id", "routes/api.reviews.$id.tsx"),
+    //route("api/reviews", "routes/api.reviews.tsx"),
+    //route("api/reviews/:id", "routes/api.reviews.$id.tsx"),
 ] satisfies RouteConfig;

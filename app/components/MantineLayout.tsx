@@ -14,7 +14,7 @@ import {
   Avatar,
 } from "@mantine/core";
 import { Link } from "react-router";
-import { IconHome, IconBook, IconUser } from '@tabler/icons-react';
+import { IconHome, IconBook, IconUser, IconUsers } from '@tabler/icons-react';
 import { Outlet } from "react-router";
 
 const theme = createTheme({
@@ -153,6 +153,20 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                 to="/reviews-grid"
                 label="Manage Reviews"
                 leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                style={{ padding: '12px 16px' }}
+              />
+              <NavLink
+                component={Link}
+                to="/books-grid"
+                label="Manage Books"
+                leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                style={{ padding: '12px 16px' }}
+              />
+              <NavLink
+                component={Link}
+                to="/users-grid"
+                label="Manage Users"
+                leftSection={<IconUsers size="1.2rem" stroke={1.5} />}
                 style={{ padding: '12px 16px' }}
               />
             </Stack>
