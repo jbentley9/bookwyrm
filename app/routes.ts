@@ -11,4 +11,8 @@ export default [
     route("api/books/:id?", "routes/books.api.tsx"),
     route("/api-test", "routes/api-test.tsx"),
     route("/api/reviews/:id?", "routes/reviews.api.tsx"),
+    route("/book-test", "routes/books.grid.test.tsx"),
+    route("/user-test", "routes/users.grid.test.tsx"),
+    route("/review-test", "routes/reviews.grid.test.tsx"),
+
 ] satisfies RouteConfig;

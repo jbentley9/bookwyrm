@@ -7,6 +7,7 @@ import type { ColDef, ICellRendererParams, ICellEditorParams, GridApi } from "ag
 import { useLoaderData, useActionData, Form, useLocation } from "react-router";
 import { IconPencil, IconTrash, IconPlus } from "@tabler/icons-react";
 import { v4 as uuidv4 } from 'uuid';
+import styles from './reviews.grid.module.css';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -210,28 +211,7 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
   return (
     <button 
       onClick={handleDelete}
-      style={{
-        background: 'transparent',
-        color: '#ff4444',
-        border: '1px solid #ff4444',
-        borderRadius: '4px',
-        padding: '4px 8px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        fontSize: '12px',
-        transition: 'all 0.2s ease',
-        height: '28px'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = '#ff4444';
-        e.currentTarget.style.color = 'white';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = '#ff4444';
-      }}
+      className={styles.deleteButton}
     >
       <IconTrash size={16} />
       Delete
@@ -292,28 +272,7 @@ function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
   return (
     <button 
       onClick={isEditing ? handleSave : handleEdit}
-      style={{
-        background: 'transparent',
-        color: buttonColor,
-        border: `1px solid ${buttonColor}`,
-        borderRadius: '4px',
-        padding: '4px 8px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '4px',
-        fontSize: '12px',
-        transition: 'all 0.2s ease',
-        height: '28px'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.background = buttonColor;
-        e.currentTarget.style.color = 'white';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.color = buttonColor;
-      }}
+      className={styles.updateButton}
     >
       <IconPencil size={16} />
       {isEditing ? 'Save' : 'Edit'}
@@ -467,16 +426,17 @@ export default function ReviewsGrid() {
     },
     { 
       headerName: 'Actions',
-      width: 160,
+      width: 120,
       cellRenderer: (params: ICellRendererParams<Review>) => (
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className={styles.actions}>
           <UpdateButtonRenderer {...params} />
           <DeleteButtonRenderer {...params} />
         </div>
       ),
       sortable: false,
       filter: false,
-      editable: false
+      editable: false,
+      suppressSizeToFit: true
     }
   ], []);
 
@@ -588,26 +548,10 @@ export default function ReviewsGrid() {
   }, []);
 
   return (
-    <div style={{ 
-      height: '100vh',
-      width: '100%',
-      padding: '20px',
-      background: 'white',
-      borderRadius: '8px',
-      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '20px',
-      overflow: 'hidden'
-    }}>
-      <div style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexShrink: 0
-      }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Manage Reviews</h2>
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Manage Reviews</h2>
+        <div className={styles.searchContainer}>
           <input
             type="text"
             placeholder="Search all columns..."
@@ -616,28 +560,11 @@ export default function ReviewsGrid() {
               setQuickFilterText(e.target.value);
               gridApi?.setQuickFilter(e.target.value);
             }}
-            style={{
-              padding: '8px 12px',
-              borderRadius: '4px',
-              border: '1px solid #ddd',
-              fontSize: '14px',
-              width: '200px'
-            }}
+            className={styles.searchInput}
           />
           <button
             onClick={() => setIsModalOpen(true)}
-            style={{
-              background: '#4CAF50',
-              color: 'white',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              fontSize: '14px'
-            }}
+            className={styles.addButton}
           >
             <IconPlus size={20} />
             Add Review
@@ -645,13 +572,7 @@ export default function ReviewsGrid() {
         </div>
       </div>
 
-      <div className="ag-theme-alpine" style={{ 
-        flex: 1,
-        minHeight: 0,
-        width: '100%',
-        borderRadius: '8px',
-        overflow: 'hidden'
-      }}>
+      <div className={`ag-theme-alpine ${styles.gridContainer}`}>
         <AgGridReact
           ref={gridRef}
           rowData={reviews}
@@ -667,12 +588,9 @@ export default function ReviewsGrid() {
           paginationPageSize={20}
           paginationPageSizeSelector={[20, 50, 100]}
           quickFilterText={quickFilterText}
-          // Theme configuration
           theme="legacy"
-          // Modern performance settings
           cellSelection={false}
           loading={false}
-          // Performance optimizations
           suppressColumnVirtualisation={true}
           suppressRowTransform={true}
           suppressContextMenu={true}
@@ -684,86 +602,45 @@ export default function ReviewsGrid() {
           suppressFieldDotNotation={false}
           suppressMenuHide={true}
           suppressDragLeaveHidesColumns={true}
-          // Optimize rendering
           rowBuffer={20}
           maxBlocksInCache={10}
-          // Disable unnecessary animations
           suppressRowHoverHighlight={true}
           suppressCellFocus={true}
           enableCellTextSelection={true}
-          onFirstDataRendered={() => {
-          }}
+          onFirstDataRendered={() => {}}
         />
       </div>
 
       {isModalOpen && (
         <>
           <div 
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              zIndex: 1000
-            }}
+            className={styles.modalOverlay}
             onClick={() => {
               setIsModalOpen(false);
               resetForm();
             }}
           />
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              backgroundColor: 'white',
-              padding: '24px',
-              borderRadius: '8px',
-              boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-              zIndex: 1001,
-              width: '90%',
-              maxWidth: '600px'
-            }}
-          >
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px'
-            }}>
-              <h3 style={{ margin: 0, fontSize: '20px' }}>Add New Review</h3>
+          <div className={styles.modal}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>Add New Review</h3>
               <button
                 onClick={() => {
                   setIsModalOpen(false);
                   resetForm();
                 }}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  fontSize: '20px',
-                  padding: '4px'
-                }}
+                className={styles.closeButton}
               >
                 ×
               </button>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className={styles.formGroup}>
               <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Select Book</label>
+                <label className={styles.formLabel}>Select Book</label>
                 <select
                   value={selectedBookId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedBookId(e.target.value)}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
+                  className={styles.formSelect}
                 >
                   <option value="">Choose a book</option>
                   {books.map((book: Book) => (
@@ -773,16 +650,11 @@ export default function ReviewsGrid() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Select User</label>
+                <label className={styles.formLabel}>Select User</label>
                 <select
                   value={selectedUserId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
+                  className={styles.formSelect}
                 >
                   <option value="">Choose a user</option>
                   {users.map((user: User) => (
@@ -792,50 +664,31 @@ export default function ReviewsGrid() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Rating</label>
+                <label className={styles.formLabel}>Rating</label>
                 <input
                   type="number"
                   min="1"
                   max="5"
                   value={newRating}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewRating(Number(e.target.value))}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
+                  className={styles.formInput}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '8px' }}>Review</label>
+                <label className={styles.formLabel}>Review</label>
                 <input
                   type="text"
                   value={newReview}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewReview(e.target.value)}
-                  style={{ 
-                    width: '100%',
-                    padding: '8px',
-                    borderRadius: '4px',
-                    border: '1px solid #ddd'
-                  }}
+                  className={styles.formInput}
                   placeholder="Write your review"
                 />
               </div>
 
               <button
                 onClick={handleAddReview}
-                style={{
-                  background: '#4CAF50',
-                  color: 'white',
-                  border: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '4px',
-                  cursor: 'pointer',
-                  marginTop: '8px',
-                  width: '100%'
-                }}
+                className={styles.submitButton}
               >
                 Add Review
               </button>
