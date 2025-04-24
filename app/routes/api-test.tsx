@@ -1,6 +1,14 @@
-import { Button, Stack, Text, TextInput, Group, Tabs, NumberInput, Paper, Code, Title, Alert, Badge, ActionIcon } from "@mantine/core";
+import { Button, Stack, Text, TextInput, Group, Tabs, NumberInput, Paper, Title, Code, ActionIcon, Tooltip, Loader } from "@mantine/core";
 import { useState } from "react";
-import { IconInfoCircle, IconX } from '@tabler/icons-react';
+import { IconTrash, IconCheck, IconX, IconRefresh, IconPlus } from "@tabler/icons-react";
+import type { Route } from "./+types/api-test";
+
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "API Test | BookWyrm" },
+    { name: "description", content: "Test the BookWyrm API endpoints" },
+  ];
+}
 
 export default function ApiTest() {
   const [bookId, setBookId] = useState("");
@@ -14,41 +22,65 @@ export default function ApiTest() {
   const [reviewText, setReviewText] = useState("");
   
   const [response, setResponse] = useState("");
-  const [status, setStatus] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const clearResponse = () => {
+  const resetForm = () => {
+    setBookId("");
+    setTitle("");
+    setAuthor("");
+    setIsbn("");
     setResponse("");
-    setStatus(null);
+    setError("");
+  };
+
+  const handleResponse = async (response: Response) => {
+    const data = await response.json();
+    setResponse(JSON.stringify(data, null, 2));
+    setError("");
+  };
+
+  const handleError = (err: any) => {
+    setError(err.message || "An error occurred");
+    setResponse("");
   };
 
   // Books API Tests
   const testGetAllBooks = async () => {
-    clearResponse();
+    setResponse("");
+    setIsLoading(true);
     try {
       const res = await fetch("/api/books");
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testGetOneBook = async () => {
-    clearResponse();
-    if (!bookId) return;
+    if (!bookId) {
+      setError("Please enter a book ID");
+      return;
+    }
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/books/${bookId}`);
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testCreateBook = async () => {
-    if (!title || !author) return;
+    if (!title || !author || !isbn) {
+      setError("Please fill in all fields");
+      return;
+    }
+    setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append("title", title);
@@ -59,16 +91,20 @@ export default function ApiTest() {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testUpdateBook = async () => {
-    if (!bookId || !title || !author) return;
+    if (!bookId || !title || !author || !isbn) {
+      setError("Please fill in all fields");
+      return;
+    }
+    setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append("title", title);
@@ -79,54 +115,67 @@ export default function ApiTest() {
         method: "PUT",
         body: formData,
       });
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testDeleteBook = async () => {
-    if (!bookId) return;
+    if (!bookId) {
+      setError("Please enter a book ID");
+      return;
+    }
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/books/${bookId}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   // Reviews API Tests
   const testGetAllReviews = async () => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/reviews");
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testGetOneReview = async () => {
-    if (!reviewId) return;
+    if (!reviewId) {
+      setError("Please enter a review ID");
+      return;
+    }
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/reviews/${reviewId}`);
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testCreateReview = async () => {
-    if (!bookId || !userId || !rating || !reviewText) return;
+    if (!bookId || !userId || !rating || !reviewText) {
+      setError("Please fill in all fields");
+      return;
+    }
+    setIsLoading(true);
     try {
       const formData = new FormData();
       formData.append("bookId", bookId);
@@ -138,16 +187,20 @@ export default function ApiTest() {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testUpdateReview = async () => {
-    if (!reviewId || (!rating && !reviewText)) return;
+    if (!reviewId || (!rating && !reviewText)) {
+      setError("Please fill in at least one field");
+      return;
+    }
+    setIsLoading(true);
     try {
       const formData = new FormData();
       if (rating) formData.append("rating", rating);
@@ -157,169 +210,248 @@ export default function ApiTest() {
         method: "PUT",
         body: formData,
       });
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const testDeleteReview = async () => {
-    if (!reviewId) return;
+    if (!reviewId) {
+      setError("Please enter a review ID");
+      return;
+    }
+    setIsLoading(true);
     try {
       const res = await fetch(`/api/reviews/${reviewId}`, {
         method: "DELETE",
       });
-      const data = await res.json();
-      setResponse(JSON.stringify(data, null, 2));
-      setStatus(res.status);
-    } catch (error) {
-      setResponse(`Error: ${error}`);
+      await handleResponse(res);
+    } catch (err) {
+      handleError(err);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   return (
-    <Stack p="md" gap="lg">
+    <Stack p="xl" gap="xl">
       <Group justify="space-between" align="center">
         <Title order={2}>API Test Page</Title>
-        <Badge size="lg" variant="light" color="blue">Development Tools</Badge>
+        <Group>
+          <Tooltip label="Reset Form">
+            <ActionIcon
+              variant="light"
+              color="gray"
+              onClick={resetForm}
+              size="lg"
+            >
+              <IconRefresh size={20} />
+            </ActionIcon>
+          </Tooltip>
+        </Group>
       </Group>
 
-      <Alert 
-        icon={<IconInfoCircle size="1rem" />} 
-        title="API Testing Tool" 
-        color="blue" 
-        variant="light"
-      >
-        This page allows you to test all available API endpoints. The API is implemented using RESTful principles and supports CRUD operations for both books and reviews.
-      </Alert>
+      <Paper p="xl" withBorder radius="md" shadow="sm">
+        <Tabs defaultValue="books">
+          <Tabs.List>
+            <Tabs.Tab value="books">Books API</Tabs.Tab>
+            <Tabs.Tab value="reviews">Reviews API</Tabs.Tab>
+          </Tabs.List>
 
-      <Tabs defaultValue="books">
-        <Tabs.List>
-          <Tabs.Tab value="books">Books API</Tabs.Tab>
-          <Tabs.Tab value="reviews">Reviews API</Tabs.Tab>
-        </Tabs.List>
+          <Tabs.Panel value="books" pt="xs">
+            <Stack>
+              <Group>
+                <Button
+                  variant="light"
+                  color="blue"
+                  onClick={testGetAllBooks}
+                  leftSection={<IconRefresh size={16} />}
+                  loading={isLoading}
+                >
+                  GET All Books
+                </Button>
+                <Button
+                  variant="light"
+                  color="blue"
+                  onClick={testGetOneBook}
+                  leftSection={<IconCheck size={16} />}
+                  loading={isLoading}
+                >
+                  GET One Book
+                </Button>
+              </Group>
 
-        <Tabs.Panel value="books" pt="xs">
-          <Stack gap="md">
-            <Group>
-              <Button onClick={testGetAllBooks} variant="light">GET /api/books</Button>
-              <Button onClick={testGetOneBook} variant="light">GET /api/books/:id</Button>
-            </Group>
+              <Group>
+                <TextInput
+                  label="Book ID"
+                  value={bookId}
+                  onChange={(e) => setBookId(e.target.value)}
+                  placeholder="Enter book ID"
+                />
+                <TextInput
+                  label="Title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter title"
+                />
+                <TextInput
+                  label="Author"
+                  value={author}
+                  onChange={(e) => setAuthor(e.target.value)}
+                  placeholder="Enter author"
+                />
+                <TextInput
+                  label="ISBN"
+                  value={isbn}
+                  onChange={(e) => setIsbn(e.target.value)}
+                  placeholder="Enter ISBN"
+                />
+              </Group>
 
-            <Paper p="md" withBorder>
-              <Stack gap="md">
-                <Text size="sm" fw={500}>Book Data</Text>
-                <Group grow>
-                  <TextInput
-                    label="Book ID"
-                    value={bookId}
-                    onChange={(e) => setBookId(e.target.value)}
-                    placeholder="Enter book ID"
-                  />
-                  <TextInput
-                    label="Title"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="Enter title"
-                  />
-                  <TextInput
-                    label="Author"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    placeholder="Enter author"
-                  />
-                  <TextInput
-                    label="ISBN"
-                    value={isbn}
-                    onChange={(e) => setIsbn(e.target.value)}
-                    placeholder="Enter ISBN"
-                  />
-                </Group>
-                <Group>
-                  <Button onClick={testCreateBook} color="green">POST /api/books</Button>
-                  <Button onClick={testUpdateBook} color="blue">PUT /api/books/:id</Button>
-                  <Button onClick={testDeleteBook} color="red">DELETE /api/books/:id</Button>
-                </Group>
-              </Stack>
-            </Paper>
-          </Stack>
-        </Tabs.Panel>
+              <Group>
+                <Button
+                  variant="light"
+                  color="green"
+                  onClick={testCreateBook}
+                  leftSection={<IconPlus size={16} />}
+                  loading={isLoading}
+                >
+                  POST Create Book
+                </Button>
+                <Button
+                  variant="light"
+                  color="yellow"
+                  onClick={testUpdateBook}
+                  leftSection={<IconRefresh size={16} />}
+                  loading={isLoading}
+                >
+                  PUT Update Book
+                </Button>
+                <Button
+                  variant="light"
+                  color="red"
+                  onClick={testDeleteBook}
+                  leftSection={<IconTrash size={16} />}
+                  loading={isLoading}
+                >
+                  DELETE Book
+                </Button>
+              </Group>
+            </Stack>
+          </Tabs.Panel>
 
-        <Tabs.Panel value="reviews" pt="xs">
-          <Stack gap="md">
-            <Group>
-              <Button onClick={testGetAllReviews} variant="light">GET /api/reviews</Button>
-              <Button onClick={testGetOneReview} variant="light">GET /api/reviews/:id</Button>
-            </Group>
+          <Tabs.Panel value="reviews" pt="xs">
+            <Stack>
+              <Group>
+                <Button
+                  variant="light"
+                  color="blue"
+                  onClick={testGetAllReviews}
+                  leftSection={<IconRefresh size={16} />}
+                  loading={isLoading}
+                >
+                  GET All Reviews
+                </Button>
+                <Button
+                  variant="light"
+                  color="blue"
+                  onClick={testGetOneReview}
+                  leftSection={<IconCheck size={16} />}
+                  loading={isLoading}
+                >
+                  GET One Review
+                </Button>
+              </Group>
 
-            <Paper p="md" withBorder>
-              <Stack gap="md">
-                <Text size="sm" fw={500}>Review Data</Text>
-                <Group grow>
-                  <TextInput
-                    label="Review ID"
-                    value={reviewId}
-                    onChange={(e) => setReviewId(e.target.value)}
-                    placeholder="Enter review ID"
-                  />
-                  <TextInput
-                    label="User ID"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    placeholder="Enter user ID"
-                  />
-                  <NumberInput
-                    label="Rating"
-                    value={rating}
-                    onChange={(value) => setRating(value?.toString() || "")}
-                    placeholder="Enter rating (1-5)"
-                    min={1}
-                    max={5}
-                  />
-                </Group>
+              <Group>
+                <TextInput
+                  label="Review ID"
+                  value={reviewId}
+                  onChange={(e) => setReviewId(e.target.value)}
+                  placeholder="Enter review ID"
+                />
+                <TextInput
+                  label="Book ID"
+                  value={bookId}
+                  onChange={(e) => setBookId(e.target.value)}
+                  placeholder="Enter book ID"
+                />
+                <TextInput
+                  label="User ID"
+                  value={userId}
+                  onChange={(e) => setUserId(e.target.value)}
+                  placeholder="Enter user ID"
+                />
+                <NumberInput
+                  label="Rating"
+                  value={rating}
+                  onChange={(val) => setRating(val?.toString() || "")}
+                  placeholder="Enter rating"
+                  min={1}
+                  max={5}
+                />
                 <TextInput
                   label="Review Text"
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Enter review text"
+                  style={{ flex: 1 }}
                 />
-                <Group>
-                  <Button onClick={testCreateReview} color="green">POST /api/reviews</Button>
-                  <Button onClick={testUpdateReview} color="blue">PUT /api/reviews/:id</Button>
-                  <Button onClick={testDeleteReview} color="red">DELETE /api/reviews/:id</Button>
-                </Group>
-              </Stack>
-            </Paper>
-          </Stack>
-        </Tabs.Panel>
-      </Tabs>
-
-      {response && (
-        <Paper p="md" withBorder>
-          <Stack gap="xs">
-            <Group justify="space-between">
-              <Group>
-                <Text size="sm" fw={500}>Response</Text>
-                {status && (
-                  <Badge color={status >= 200 && status < 300 ? "green" : "red"}>
-                    Status: {status}
-                  </Badge>
-                )}
               </Group>
-              <ActionIcon 
-                variant="light" 
-                color="gray" 
-                onClick={clearResponse}
-                title="Clear response"
-              >
-                <IconX size="1rem" />
-              </ActionIcon>
+
+              <Group>
+                <Button
+                  variant="light"
+                  color="green"
+                  onClick={testCreateReview}
+                  leftSection={<IconPlus size={16} />}
+                  loading={isLoading}
+                >
+                  POST Create Review
+                </Button>
+                <Button
+                  variant="light"
+                  color="yellow"
+                  onClick={testUpdateReview}
+                  leftSection={<IconRefresh size={16} />}
+                  loading={isLoading}
+                >
+                  PUT Update Review
+                </Button>
+                <Button
+                  variant="light"
+                  color="red"
+                  onClick={testDeleteReview}
+                  leftSection={<IconTrash size={16} />}
+                  loading={isLoading}
+                >
+                  DELETE Review
+                </Button>
+              </Group>
+            </Stack>
+          </Tabs.Panel>
+        </Tabs>
+      </Paper>
+
+      {(response || error) && (
+        <Paper p="xl" withBorder radius="md" shadow="sm">
+          <Stack gap="md">
+            <Group justify="space-between" align="center">
+              <Title order={3}>Response</Title>
+              {isLoading && <Loader size="sm" />}
             </Group>
-            <Code block style={{ whiteSpace: 'pre-wrap' }}>
-              {response}
-            </Code>
+            {error ? (
+              <Text c="red" size="sm">
+                {error}
+              </Text>
+            ) : (
+              <Code block style={{ whiteSpace: "pre-wrap" }}>
+                {response}
+              </Code>
+            )}
           </Stack>
         </Paper>
       )}

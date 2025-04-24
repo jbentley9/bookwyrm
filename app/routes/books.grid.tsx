@@ -1,3 +1,4 @@
+import prisma from "../db";
 import type { Route } from "./+types/books";
 import { AgGridReact } from "ag-grid-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -22,14 +23,12 @@ type LoaderData = {
 
 // Loader function to fetch all books
 export async function loader() {
-  try {
-    const response = await fetch("/api/books");
-    const data = await response.json();
-    return { books: data.books };
-  } catch (error) {
-    console.error("Error fetching books:", error);
-    return { books: [] };
-  }
+  const books = await prisma.book.findMany({
+    orderBy: {
+      title: 'asc'
+    }
+  });
+  return { books };
 }
 
 // Action function to handle operations
@@ -45,20 +44,15 @@ export async function action({ request }: Route.ActionArgs) {
       const isbn = formData.get("isbn") as string;
       
       try {
-        const createFormData = new FormData();
-        createFormData.append("title", title);
-        createFormData.append("author", author);
-        createFormData.append("isbn", isbn);
-
-        const response = await fetch("/api/books", {
-          method: "POST",
-          body: createFormData,
+        await prisma.book.create({
+          data: {
+            id,
+            title,
+            author,
+            isbn
+          }
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to create book");
-        }
-
+        
         return new Response(JSON.stringify({ success: true }), {
           status: 201,
           headers: {
@@ -82,50 +76,21 @@ export async function action({ request }: Route.ActionArgs) {
       const author = formData.get("author") as string;
       const isbn = formData.get("isbn") as string;
       
-      try {
-        const updateFormData = new FormData();
-        updateFormData.append("title", title);
-        updateFormData.append("author", author);
-        updateFormData.append("isbn", isbn);
-
-        const response = await fetch(`/api/books/${bookId}`, {
-          method: "PUT",
-          body: updateFormData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to update book");
-        }
-
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (error) {
-        console.error('Failed to update book:', error);
-        return new Response(JSON.stringify({ error: 'Failed to update book' }), {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      }
+      await prisma.book.update({
+        where: { id: bookId },
+        data: { title, author, isbn }
+      });
+      break;
     }
     
     case "delete": {
       const bookId = formData.get("bookId") as string;
       
       try {
-        const response = await fetch(`/api/books/${bookId}`, {
-          method: "DELETE",
+        await prisma.book.delete({
+          where: { id: bookId }
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to delete book");
-        }
-
+        
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: {
@@ -223,6 +188,8 @@ function UpdateButtonRenderer(props: ICellRendererParams<Book>) {
   const gridApi = props.api;
 
   useEffect(() => {
+    if (!gridApi) return;
+
     const onCellEditingStarted = (event: any) => {
       if (event.node === props.node) {
         setIsEditing(true);
@@ -231,21 +198,18 @@ function UpdateButtonRenderer(props: ICellRendererParams<Book>) {
 
     const onCellEditingStopped = (event: any) => {
       if (event.node === props.node) {
-        const isStillEditing = gridApi?.getEditingCells().some(
-          cell => cell.rowIndex === props.node.rowIndex
-        );
-        if (!isStillEditing) {
-          setIsEditing(false);
-        }
+        setIsEditing(false);
       }
     };
 
-    gridApi?.addEventListener('cellEditingStarted', onCellEditingStarted);
-    gridApi?.addEventListener('cellEditingStopped', onCellEditingStopped);
+    gridApi.addEventListener('cellEditingStarted', onCellEditingStarted);
+    gridApi.addEventListener('cellEditingStopped', onCellEditingStopped);
 
     return () => {
-      gridApi?.removeEventListener('cellEditingStarted', onCellEditingStarted);
-      gridApi?.removeEventListener('cellEditingStopped', onCellEditingStopped);
+      if (!gridApi.isDestroyed()) {
+        gridApi.removeEventListener('cellEditingStarted', onCellEditingStarted);
+        gridApi.removeEventListener('cellEditingStopped', onCellEditingStopped);
+      }
     };
   }, [gridApi, props.node]);
 
@@ -328,6 +292,7 @@ export default function BooksGrid() {
     { 
       field: 'title', 
       headerName: 'Title',
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
@@ -337,6 +302,7 @@ export default function BooksGrid() {
     { 
       field: 'author', 
       headerName: 'Author',
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
@@ -346,6 +312,7 @@ export default function BooksGrid() {
     { 
       field: 'isbn', 
       headerName: 'ISBN',
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],

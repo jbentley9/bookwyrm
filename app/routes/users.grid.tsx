@@ -395,6 +395,7 @@ export default function UsersGrid() {
     { 
       field: 'name', 
       headerName: 'Name',
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
@@ -404,6 +405,7 @@ export default function UsersGrid() {
     { 
       field: 'email', 
       headerName: 'Email',
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
@@ -413,6 +415,7 @@ export default function UsersGrid() {
     { 
       field: 'tier', 
       headerName: 'Tier',
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],

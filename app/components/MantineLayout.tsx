@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from "react-router";
-import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconWriting, IconLogout, IconApi } from '@tabler/icons-react';
+import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconWriting, IconLogout, IconApi, IconCode } from '@tabler/icons-react';
 
 const theme = createTheme({
   primaryColor: 'blue',
@@ -186,7 +186,11 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                       />
                     </Stack>
                   </Box>
+                </>
+              )}
 
+              {user && (
+                <>
                   <Divider my="xs" />
                   <Box>
                     <Text size="sm" c="dimmed" fw={500} pl="md" mb="xs">Development</Text>

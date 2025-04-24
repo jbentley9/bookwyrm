@@ -36,46 +36,32 @@ type Review = {
 
 // Loader function to fetch all reviews
 export async function loader() {
-  try {
-    const reviews = await prisma.review.findMany({
-      select: {
-        id: true,
-        rating: true,
-        review: true,
-        user: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
-        book: {
-          select: {
-            id: true,
-            title: true
-          }
-        }
-      }
-    });
+  const reviews = await prisma.review.findMany({
+    include: {
+      user: true,
+      book: true,
+    },
+    orderBy: [
+      { user: { name: 'asc' } },
+      { book: { title: 'asc' } }
+    ],
+  });
 
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true
-      }
-    });
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+    }
+  });
 
-    const books = await prisma.book.findMany({
-      select: {
-        id: true,
-        title: true
-      }
-    });
+  const books = await prisma.book.findMany({
+    select: {
+      id: true,
+      title: true,
+    }
+  });
 
-    return { reviews, users, books };
-  } catch (error) {
-    console.error("Error fetching data:", error);
-    return { reviews: [], users: [], books: [] };
-  }
+  return { reviews, users, books };
 }
 
 // Action function to handle operations
@@ -101,21 +87,30 @@ export async function action({ request }: Route.ActionArgs) {
       }
       
       try {
-        const createFormData = new FormData();
-        createFormData.append("bookId", bookId);
-        createFormData.append("userId", userId);
-        createFormData.append("rating", rating.toString());
-        createFormData.append("review", review);
-
-        const response = await fetch("/api/reviews", {
-          method: "POST",
-          body: createFormData,
+        const newReview = await prisma.review.create({
+      data: {
+            id,
+            rating,
+            review,
+            userId,
+            bookId
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true
+              }
+            },
+            book: {
+              select: {
+                id: true,
+                title: true
+              }
+            }
+          }
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to create review");
-        }
-
+        
         return new Response(JSON.stringify({ success: true }), {
           status: 201,
           headers: {
@@ -138,49 +133,21 @@ export async function action({ request }: Route.ActionArgs) {
       const rating = Number(formData.get("rating"));
       const review = formData.get("review") as string;
       
-      try {
-        const updateFormData = new FormData();
-        if (rating) updateFormData.append("rating", rating.toString());
-        if (review) updateFormData.append("review", review);
-
-        const response = await fetch(`/api/reviews/${reviewId}`, {
-          method: "PUT",
-          body: updateFormData,
-        });
-
-        if (!response.ok) {
-          throw new Error("Failed to update review");
-        }
-
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      } catch (error) {
-        console.error('Failed to update review:', error);
-        return new Response(JSON.stringify({ error: 'Failed to update review' }), {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      }
+      await prisma.review.update({
+        where: { id: reviewId },
+        data: { rating, review }
+      });
+      break;
     }
     
     case "delete": {
       const reviewId = formData.get("reviewId") as string;
       
       try {
-        const response = await fetch(`/api/reviews/${reviewId}`, {
-          method: "DELETE",
+        await prisma.review.delete({
+          where: { id: reviewId }
         });
-
-        if (!response.ok) {
-          throw new Error("Failed to delete review");
-        }
-
+        
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: {
@@ -278,6 +245,8 @@ function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
   const gridApi = props.api;
 
   useEffect(() => {
+    if (!gridApi) return;
+
     const onCellEditingStarted = (event: any) => {
       if (event.node === props.node) {
         setIsEditing(true);
@@ -286,21 +255,18 @@ function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
 
     const onCellEditingStopped = (event: any) => {
       if (event.node === props.node) {
-        const isStillEditing = gridApi?.getEditingCells().some(
-          cell => cell.rowIndex === props.node.rowIndex
-        );
-        if (!isStillEditing) {
-          setIsEditing(false);
-        }
+        setIsEditing(false);
       }
     };
 
-    gridApi?.addEventListener('cellEditingStarted', onCellEditingStarted);
-    gridApi?.addEventListener('cellEditingStopped', onCellEditingStopped);
+    gridApi.addEventListener('cellEditingStarted', onCellEditingStarted);
+    gridApi.addEventListener('cellEditingStopped', onCellEditingStopped);
 
     return () => {
-      gridApi?.removeEventListener('cellEditingStarted', onCellEditingStarted);
-      gridApi?.removeEventListener('cellEditingStopped', onCellEditingStopped);
+      if (!gridApi.isDestroyed()) {
+        gridApi.removeEventListener('cellEditingStarted', onCellEditingStarted);
+        gridApi.removeEventListener('cellEditingStopped', onCellEditingStopped);
+      }
     };
   }, [gridApi, props.node]);
 
@@ -440,6 +406,7 @@ export default function ReviewsGrid() {
   
   const { reviews, users, books } = useLoaderData<typeof loader>();
   
+
   // Memoize the column definitions to prevent re-renders
   const defaultColDef = useMemo(() => ({
     sortable: true,
@@ -476,6 +443,7 @@ export default function ReviewsGrid() {
       field: 'rating', 
       headerName: 'Rating',
       width: 100,
+      editable: true,
       filter: 'agNumberColumnFilter',
       filterParams: {
         filterOptions: ['equals', 'lessThan', 'greaterThan'],
@@ -488,6 +456,7 @@ export default function ReviewsGrid() {
       flex: 2,
       minWidth: 300,
       maxWidth: 800,
+      editable: true,
       autoHeight: true,
       wrapText: true,
       filter: 'agTextColumnFilter',
