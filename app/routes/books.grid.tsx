@@ -1,5 +1,5 @@
 import prisma from "../db";
-import type { Route } from "./+types/books";
+import type { Route } from "./+types/books.grid";
 import { AgGridReact } from "ag-grid-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";

@@ -1,10 +1,10 @@
 import prisma from "../db";
-import type { Route } from "./+types/users";
+import type { Route } from "./+types/users.grid";
 import { AgGridReact } from "ag-grid-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import type { ColDef, ICellRendererParams, ICellEditorParams, GridApi } from "ag-grid-community";
-import { useLoaderData, useActionData, Form, useLocation } from "react-router";
+import type { ColDef, ICellRendererParams, GridApi } from "ag-grid-community";
+import { useLoaderData, useActionData } from "react-router";
 import { IconPencil, IconTrash, IconPlus } from "@tabler/icons-react";
 import { v4 as uuidv4 } from 'uuid';
 import { Button, Modal, Select, TextInput, Stack } from "@mantine/core";
@@ -22,6 +22,7 @@ type LoaderData = {
   users: User[];
 };
 
+// Loader function to fetch all users
 export async function loader() {
   const users = await prisma.user.findMany({
     orderBy: {
@@ -31,6 +32,7 @@ export async function loader() {
   return { users };
 }
 
+// Action function to handle operations
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
   const actionType = formData.get("actionType");
