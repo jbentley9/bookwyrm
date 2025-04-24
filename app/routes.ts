@@ -8,6 +8,7 @@ export default [
     route("books-grid", "routes/books.grid.tsx"),
     route("users-grid", "routes/users.grid.tsx"),
     route("logout", "routes/logout.tsx"),
-    //route("api/reviews", "routes/api.reviews.tsx"),
-    //route("api/reviews/:id", "routes/api.reviews.$id.tsx"),
+    route("api/books/:id?", "routes/books.api.tsx"),
+    route("/api-test", "routes/api-test.tsx"),
+    route("/api/reviews/:id?", "routes/reviews.api.tsx"),
 ] satisfies RouteConfig;
