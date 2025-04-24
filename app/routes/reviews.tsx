@@ -1,12 +1,16 @@
 import '@mantine/core/styles.css';
 import type { Route } from "./+types/reviews";
 import prisma from "../db"; 
-import { Button, Container, Group, Stack, Title, Text, Card, Rating, Avatar, Badge, Modal, TextInput, Textarea, Select, ActionIcon, Menu, Box } from "@mantine/core";
-import { IconPlus, IconUser, IconSearch, IconX, IconFilter } from "@tabler/icons-react";
-import { useLoaderData, useNavigate, redirect } from "react-router";
-import { useState, useCallback } from "react";
+import { Container, Group, Stack, Title, Text } from "@mantine/core";
+import { useLoaderData, redirect } from "react-router";
+import { useState } from "react";
 import { getUser } from "../utils/auth-user";
-import { useDebouncedValue } from '@mantine/hooks';
+import { SearchBar } from "../components/SearchBar";
+import { ReviewFormModal } from "../components/ReviewFormModal";
+import { ReviewControls } from "../components/ReviewControls";
+import { ReviewCard } from "../components/ReviewCard";
+
+type SearchFilter = 'all' | 'book' | 'review' | 'user';
 
 export async function loader({ request }: Route.LoaderArgs) {
   const sessionUser = await getUser(request);
@@ -100,8 +104,6 @@ export async function action({ request }: Route.ActionArgs) {
   }
 }
 
-type SearchFilter = 'all' | 'book' | 'review' | 'user';
-
 export default function Reviews() {
   const { reviews, currentUser, books } = useLoaderData<typeof loader>();
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,9 +113,7 @@ export default function Reviews() {
   const [error, setError] = useState<string | null>(null);
   const [showMyReviews, setShowMyReviews] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedSearch] = useDebouncedValue(searchTerm, 200);
   const [searchFilter, setSearchFilter] = useState<SearchFilter>('all');
-  const navigate = useNavigate();
 
   // Function to highlight search terms in text
   const highlightText = (text: string, search: string) => {
@@ -134,8 +134,8 @@ export default function Reviews() {
     }
 
     // Then filter by search term
-    if (debouncedSearch) {
-      const searchLower = debouncedSearch.toLowerCase();
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
       switch (searchFilter) {
         case 'book':
           return review.book.title.toLowerCase().includes(searchLower);
@@ -202,77 +202,20 @@ export default function Reviews() {
         <Group justify="space-between">
           <Title order={2}>Reviews</Title>
           {currentUser && (
-            <Group>
-              <Button
-                variant={showMyReviews ? "filled" : "default"}
-                onClick={() => setShowMyReviews(!showMyReviews)}
-                leftSection={<IconUser size={16} />}
-              >
-                {showMyReviews ? "All Reviews" : "My Reviews"}
-              </Button>
-              <Button
-                variant="filled"
-                onClick={() => setIsModalOpen(true)}
-                leftSection={<IconPlus size={16} />}
-              >
-                New Review
-              </Button>
-            </Group>
+            <ReviewControls
+              showMyReviews={showMyReviews}
+              onToggleMyReviews={() => setShowMyReviews(!showMyReviews)}
+              onNewReview={() => setIsModalOpen(true)}
+            />
           )}
         </Group>
 
-        <Group style={{ width: '100%' }} gap="xs">
-          <TextInput
-            placeholder="Search reviews..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ flex: 1 }}
-            rightSection={
-              searchTerm && (
-                <ActionIcon
-                  variant="transparent"
-                  onClick={() => setSearchTerm("")}
-                >
-                  <IconX size={16} />
-                </ActionIcon>
-              )
-            }
-          />
-          <Menu position="bottom-end">
-            <Menu.Target>
-              <ActionIcon variant="light" size="lg">
-                <IconFilter size={16} />
-              </ActionIcon>
-            </Menu.Target>
-            <Menu.Dropdown>
-              <Menu.Label>Search in</Menu.Label>
-              <Menu.Item
-                onClick={() => setSearchFilter('all')}
-                leftSection={searchFilter === 'all' ? '✓' : ''}
-              >
-                All fields
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => setSearchFilter('book')}
-                leftSection={searchFilter === 'book' ? '✓' : ''}
-              >
-                Book titles
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => setSearchFilter('review')}
-                leftSection={searchFilter === 'review' ? '✓' : ''}
-              >
-                Review content
-              </Menu.Item>
-              <Menu.Item
-                onClick={() => setSearchFilter('user')}
-                leftSection={searchFilter === 'user' ? '✓' : ''}
-              >
-                User names
-              </Menu.Item>
-            </Menu.Dropdown>
-          </Menu>
-        </Group>
+        <SearchBar
+          searchTerm={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchFilter={searchFilter}
+          onFilterChange={setSearchFilter}
+        />
 
         {!currentUser && (
           <Text c="dimmed" ta="center" mt="md">
@@ -282,62 +225,32 @@ export default function Reviews() {
 
         <Stack gap="md">
           {filteredReviews.map((review) => (
-            <Card key={review.id} withBorder>
-              <Group justify="space-between" mb="xs">
-                <Group>
-                  <Avatar color="blue" radius="xl">
-                    {review.user.name.charAt(0)}
-                  </Avatar>
-                  <div>
-                    <Text fw={500}>{review.user.name}</Text>
-                    <Text size="sm" c="dimmed">{review.book.title}</Text>
-                  </div>
-                </Group>
-                <Rating value={review.rating} readOnly />
-              </Group>
-              <Text>{highlightText(review.review, debouncedSearch)}</Text>
-            </Card>
+            <ReviewCard
+              key={review.id}
+              review={{
+                ...review,
+                user: { name: review.user.name },
+                book: { title: review.book.title }
+              }}
+            />
           ))}
         </Stack>
       </Stack>
 
       {currentUser && (
-        <Modal
+        <ReviewFormModal
           opened={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          title="New Review"
-          size="lg"
-        >
-          <form onSubmit={handleSubmit}>
-            <Stack gap="md">
-              <Select
-                label="Book"
-                placeholder="Select a book"
-                data={books.map(book => ({ value: book.id, label: book.title }))}
-                value={bookId}
-                onChange={(value) => setBookId(value || "")}
-                required
-              />
-              <Rating value={rating} onChange={setRating} />
-              <Textarea
-                label="Review"
-                placeholder="Write your review..."
-                value={review}
-                onChange={(e) => setReview(e.target.value)}
-                required
-              />
-              {error && <Text c="red">{error}</Text>}
-              <Group justify="flex-end">
-                <Button variant="default" onClick={() => setIsModalOpen(false)}>
-                  Cancel
-                </Button>
-                <Button type="submit" variant="filled">
-                  Submit Review
-                </Button>
-              </Group>
-            </Stack>
-          </form>
-        </Modal>
+          onSubmit={handleSubmit}
+          books={books}
+          rating={rating}
+          onRatingChange={setRating}
+          review={review}
+          onReviewChange={setReview}
+          bookId={bookId}
+          onBookIdChange={setBookId}
+          error={error}
+        />
       )}
     </Container>
   );
