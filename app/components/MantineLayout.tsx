@@ -4,18 +4,21 @@ import {
   AppShellNavbar,
   AppShellMain,
   NavLink,
-  Button,
-  Group,
-  Stack,
-  Title,
   createTheme,
   UnstyledButton,
+  Group,
+  Button,
+  Stack,
+  Title,
   Text,
   Avatar,
+  Collapse,
+  Divider,
+  Box,
 } from "@mantine/core";
-import { Link } from "react-router";
-import { IconHome, IconBook, IconUser, IconUsers } from '@tabler/icons-react';
-import { Outlet } from "react-router";
+import { useDisclosure } from '@mantine/hooks';
+import { Link, Outlet, useLocation } from "react-router";
+import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconWriting, IconLogout } from '@tabler/icons-react';
 
 const theme = createTheme({
   primaryColor: 'blue',
@@ -27,6 +30,10 @@ const theme = createTheme({
         main: {
           background: '#f8f9fa',
         },
+        navbar: {
+          background: 'linear-gradient(180deg, rgba(34, 139, 230, 0.05) 0%, rgba(34, 139, 230, 0.02) 100%)',
+          borderRight: '1px solid rgba(34, 139, 230, 0.1)',
+        },
       },
     },
     NavLink: {
@@ -36,11 +43,14 @@ const theme = createTheme({
           marginBottom: '4px',
           transition: 'all 0.2s ease',
           '&:hover': {
-            background: 'rgba(34, 139, 230, 0.1)',
+            background: 'linear-gradient(135deg, rgba(34, 139, 230, 0.1) 0%, rgba(21, 170, 191, 0.1) 100%) !important',
             transform: 'translateX(4px)',
+            '& .mantine-NavLink-body': {
+              background: 'transparent !important',
+            },
           },
           '&[dataActive]': {
-            background: 'rgba(34, 139, 230, 0.15)',
+            background: 'linear-gradient(135deg, rgba(34, 139, 230, 0.2) 0%, rgba(21, 170, 191, 0.2) 100%)',
             color: '#228be6',
             fontWeight: 600,
             transform: 'translateX(4px)',
@@ -69,14 +79,17 @@ const theme = createTheme({
 });
 
 interface MantineLayoutProps {
-  user?: {
+  user: {
     id: string;
     name: string;
     email: string;
+    tier?: string;
   } | null;
 }
 
 export default function MantineLayout({ user }: MantineLayoutProps) {
+  const location = useLocation();
+
   return (
     <MantineProvider theme={theme}>
       <AppShell
@@ -84,96 +97,113 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
         navbar={{ width: 280, breakpoint: 'sm' }}
         padding={0}
       >
-        <AppShellNavbar p="md" style={{ 
-          background: 'white', 
-          position: 'fixed',
-          height: '100vh',
-          top: 0,
-          left: 0,
-          display: 'flex',
-          flexDirection: 'column'
-        }}>   
-          <AppShell.Section>
-            <UnstyledButton component={Link} to="/">
-              <Group>
-                <Title order={2} style={{ 
-                  color: '#228be6',
-                  fontFamily: 'Inter, sans-serif',
-                  fontWeight: 800,
-                  letterSpacing: '-0.5px',
-                  background: 'linear-gradient(45deg, #228be6, #15aabf)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                }}>
-                  BookWyrm
-                </Title>
-              </Group>
-            </UnstyledButton>
-            <div style={{ 
-              marginTop: '16px',
-              padding: '12px',
-              borderRadius: '8px',
-              background: 'rgba(34, 139, 230, 0.1)',
-              display: user ? "block" : "none"
-            }}>
-              <Group>
-                <Avatar color="blue" radius="xl">
-                  <IconUser size="1.5rem" />
-                </Avatar>
-                <div>
-                  <Text size="sm" c="dimmed">Welcome back,</Text>
-                  <Text fw={500}>{user?.name}</Text>
-                </div>
-              </Group>
-            </div>
-          </AppShell.Section>
-          <AppShell.Section grow>
-            <Stack gap={4}>
-              <NavLink
-                component={Link}
-                to="/"
-                label="Home"
-                leftSection={<IconHome size="1.2rem" stroke={1.5} />}
-                style={{ padding: '12px 16px' }}
-              />
-              <NavLink
-                component={Link}
-                to="/all-reviews"
-                label="Reviews"
-                leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-                style={{ padding: '12px 16px' }}
-              />
+        <AppShellNavbar p="md">
+          <Stack h="100%" justify="space-between">
+            <Stack gap="xl">
+              <Box>
+                <UnstyledButton component={Link} to="/">
+                  <Group>
+                    <Title order={2} style={{ 
+                      color: '#228be6',
+                      fontFamily: 'Inter, sans-serif',
+                      fontWeight: 800,
+                      letterSpacing: '-0.5px',
+                      background: 'linear-gradient(45deg, #228be6, #15aabf)',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                    }}>
+                      BookWyrm
+                    </Title>
+                  </Group>
+                </UnstyledButton>
+                {user && (
+                  <Box mt="md" p="md" style={{
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, rgba(34, 139, 230, 0.1) 0%, rgba(21, 170, 191, 0.1) 100%)',
+                    border: '1px solid rgba(34, 139, 230, 0.1)',
+                  }}>
+                    <Group>
+                      <Avatar color="blue" radius="xl">
+                        <IconUser size="1.5rem" />
+                      </Avatar>
+                      <div>
+                        <Text size="sm" c="dimmed">Welcome back,</Text>
+                        <Text fw={500}>{user.name}</Text>
+                      </div>
+                    </Group>
+                  </Box>
+                )}
+              </Box>
+
+              <Stack gap="xs">
+                <NavLink
+                  component={Link}
+                  to="/"
+                  label="Home"
+                  leftSection={<IconHome size="1.2rem" stroke={1.5} />}
+                  style={{ padding: '12px 16px' }}
+                  active={location.pathname === '/'}
+                />
+                <NavLink
+                  component={Link}
+                  to="/all-reviews"
+                  label="All Reviews"
+                  leftSection={<IconWriting size="1.2rem" stroke={1.5} />}
+                  style={{ padding: '12px 16px' }}
+                  active={location.pathname === '/all-reviews'}
+                />
+              </Stack>
+
+              {user && (
+                <>
+                  <Divider my="xs" />
+                  <Box>
+                    <Text size="sm" c="dimmed" fw={500} pl="md" mb="xs">Manage</Text>
+                    <Stack gap={4}>
+                      <NavLink
+                        component={Link}
+                        to="/reviews-grid"
+                        label="Reviews"
+                        leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                        style={{ padding: '12px 16px' }}
+                        active={location.pathname === '/reviews-grid'}
+                      />
+                      <NavLink
+                        component={Link}
+                        to="/books-grid"
+                        label="Books"
+                        leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                        style={{ padding: '12px 16px' }}
+                        active={location.pathname === '/books-grid'}
+                      />
+                      <NavLink
+                        component={Link}
+                        to="/users-grid"
+                        label="Users"
+                        leftSection={<IconUsers size="1.2rem" stroke={1.5} />}
+                        style={{ padding: '12px 16px' }}
+                        active={location.pathname === '/users-grid'}
+                      />
+                    </Stack>
+                  </Box>
+                </>
+              )}
             </Stack>
-          </AppShell.Section>
-          <AppShell.Section style={{ display: user ? "block" : "none"}}>
-            <Title order={5} ta="center"> - Admin - </Title>
-            <Stack gap={4}>
-              <NavLink
-                component={Link}
-                to="/reviews-grid"
-                label="Manage Reviews"
-                leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-                style={{ padding: '12px 16px' }}
-              />
-              <NavLink
-                component={Link}
-                to="/books-grid"
-                label="Manage Books"
-                leftSection={<IconBook size="1.2rem" stroke={1.5} />}
-                style={{ padding: '12px 16px' }}
-              />
-              <NavLink
-                component={Link}
-                to="/users-grid"
-                label="Manage Users"
-                leftSection={<IconUsers size="1.2rem" stroke={1.5} />}
-                style={{ padding: '12px 16px' }}
-              />
-            </Stack>
-          </AppShell.Section>
-          <AppShell.Section>
-            <Button component={Link} to={user ? "/logout" : "/login"} fullWidth>{user ? "Logout" : "Login"}</Button>
-          </AppShell.Section>
+
+            <Box>
+              <Divider mb="md" />
+              <Button 
+                component={Link} 
+                to={user ? "/logout" : "/login"} 
+                fullWidth
+                variant="light"
+                color={user ? "red" : "blue"}
+                leftSection={<IconLogout size="1.2rem" stroke={1.5} />}
+              >
+                {user ? "Logout" : "Login"}
+              </Button>
+            </Box>
+          </Stack>
         </AppShellNavbar>
         <AppShellMain>
           <Outlet />

@@ -22,19 +22,12 @@ type LoaderData = {
 };
 
 // Loader function to fetch all books
-export async function loader({ request }: Route.LoaderArgs) {
-  console.time('Total Loader Time');
-  
-  console.time('Fetch Books');
+export async function loader() {
   const books = await prisma.book.findMany({
     orderBy: {
       title: 'asc'
     }
   });
-  console.timeEnd('Fetch Books');
-
-  console.timeEnd('Total Loader Time');
-  
   return { books };
 }
 
@@ -277,28 +270,45 @@ export default function BooksGrid() {
   const { books } = useLoaderData<typeof loader>();
   console.timeEnd('Component Render');
 
-  // Memoize the column definitions to prevent re-renders
+  const defaultColDef = useMemo(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+    flex: 1,
+    minWidth: 100,
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      closeOnApply: true,
+    },
+  }), []);
+
   const colDefs = useMemo<ColDef<Book>[]>(() => [
     { 
       field: 'title', 
       headerName: 'Title',
-      flex: 2,
-      minWidth: 200,
-      editable: true
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       field: 'author', 
       headerName: 'Author',
-      flex: 1,
-      minWidth: 150,
-      editable: true
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       field: 'isbn', 
       headerName: 'ISBN',
-      flex: 1,
-      minWidth: 150,
-      editable: true
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       headerName: 'Actions',
@@ -321,6 +331,7 @@ export default function BooksGrid() {
   const [newTitle, setNewTitle] = useState('');
   const [newAuthor, setNewAuthor] = useState('');
   const [newISBN, setNewISBN] = useState('');
+  const [quickFilterText, setQuickFilterText] = useState('');
 
   // Memoize the grid ready handler
   const onGridReady = useCallback((params: any) => {
@@ -420,25 +431,43 @@ export default function BooksGrid() {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Books</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{
-            background: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px'
-          }}
-        >
-          <IconPlus size={20} />
-          Add Book
-        </button>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Manage Books</h2>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search all columns..."
+            value={quickFilterText}
+            onChange={(e) => {
+              setQuickFilterText(e.target.value);
+              gridApi?.setQuickFilter(e.target.value);
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              width: '200px'
+            }}
+          />
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              background: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}
+          >
+            <IconPlus size={20} />
+            Add Book
+          </button>
+        </div>
       </div>
 
       <div className="ag-theme-alpine" style={{ 
@@ -452,12 +481,7 @@ export default function BooksGrid() {
           ref={gridRef}
           rowData={books}
           columnDefs={colDefs}
-          defaultColDef={{
-            resizable: true,
-            sortable: true,
-            filter: true,
-            editable: false
-          }}
+          defaultColDef={defaultColDef}
           domLayout="normal"
           animateRows={false}
           rowHeight={48}
@@ -467,6 +491,7 @@ export default function BooksGrid() {
           pagination={true}
           paginationPageSize={20}
           paginationPageSizeSelector={[20, 50, 100]}
+          quickFilterText={quickFilterText}
           theme="legacy"
           cellSelection={false}
           loading={false}

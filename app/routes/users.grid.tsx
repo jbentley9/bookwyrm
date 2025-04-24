@@ -22,19 +22,12 @@ type LoaderData = {
   users: User[];
 };
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader() {
   const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      tier: true,
-    },
     orderBy: {
-      createdAt: 'desc'
+      name: 'asc'
     }
   });
-  
   return { users };
 }
 
@@ -377,33 +370,47 @@ export default function UsersGrid() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [tier, setTier] = useState<"BASIC" | "PREMIER">("BASIC");
+  const [quickFilterText, setQuickFilterText] = useState('');
 
-  // Memoize the column definitions to prevent re-renders
+  const defaultColDef = useMemo(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+    flex: 1,
+    minWidth: 100,
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      closeOnApply: true,
+    },
+  }), []);
+
   const colDefs = useMemo<ColDef<User>[]>(() => [
     { 
-      field: "name", 
-      headerName: "Name", 
-      flex: 1,
-      minWidth: 150,
-      editable: true
+      field: 'name', 
+      headerName: 'Name',
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
-      field: "email", 
-      headerName: "Email", 
-      flex: 1,
-      minWidth: 200,
-      editable: true
+      field: 'email', 
+      headerName: 'Email',
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
-      field: "tier", 
-      headerName: "Tier", 
-      flex: 1,
-      minWidth: 100,
-      editable: true,
-      cellEditor: 'agSelectCellEditor',
-      cellEditorParams: {
-        values: ['BASIC', 'PREMIER']
-      }
+      field: 'tier', 
+      headerName: 'Tier',
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       headerName: 'Actions',
@@ -529,32 +536,43 @@ export default function UsersGrid() {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Users</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{
-            background: '#40c057',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px',
-            fontWeight: 500
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = '#37b24d';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = '#40c057';
-          }}
-        >
-          <IconPlus size={20} />
-          Add User
-        </button>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Manage Users</h2>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search all columns..."
+            value={quickFilterText}
+            onChange={(e) => {
+              setQuickFilterText(e.target.value);
+              gridApi?.setQuickFilter(e.target.value);
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              width: '200px'
+            }}
+          />
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              background: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}
+          >
+            <IconPlus size={20} />
+            Add User
+          </button>
+        </div>
       </div>
 
       <div className="ag-theme-alpine" style={{ 
@@ -568,12 +586,7 @@ export default function UsersGrid() {
           ref={gridRef}
           rowData={users}
           columnDefs={colDefs}
-          defaultColDef={{
-            resizable: true,
-            sortable: true,
-            filter: true,
-            editable: false
-          }}
+          defaultColDef={defaultColDef}
           domLayout="normal"
           animateRows={false}
           rowHeight={48}
@@ -583,6 +596,7 @@ export default function UsersGrid() {
           pagination={true}
           paginationPageSize={20}
           paginationPageSizeSelector={[20, 50, 100]}
+          quickFilterText={quickFilterText}
           theme="legacy"
           cellSelection={false}
           loading={false}

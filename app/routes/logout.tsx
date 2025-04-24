@@ -1,7 +1,7 @@
 import { getSession, destroySession } from "../sessions.server";
 import type { Route } from "./+types/logout";
 import { Form, Link, redirect } from "react-router";
-import { Button, Group } from "@mantine/core";
+import { Button, Group, Stack, Text, Paper, Container } from "@mantine/core";
 import { getUser } from "../utils/auth-user";
 
 export async function loader({ request }: Route.LoaderArgs) {
@@ -25,16 +25,46 @@ export async function action({
     });
   }
   
-  export default function LogoutRoute() {
+export default function LogoutRoute() {
     return (
-      <>
-        <p>Are you sure you want to log out?</p>
-        <Group>
-        <Form method="post">
-          <Button type="submit">Logout</Button>
-        </Form>
-        <Button component={Link} to="/">Never mind</Button>
-        </Group>
-      </>
+      <Container size="xs" py="xl">
+        <Paper 
+          shadow="sm" 
+          p="xl" 
+          radius="md"
+          withBorder
+          style={{
+            background: 'white',
+            maxWidth: '400px',
+            margin: '0 auto'
+          }}
+        >
+          <Stack gap="lg">
+            <Text size="lg" fw={500} ta="center">
+              Are you sure you want to log out?
+            </Text>
+            <Group justify="center" gap="md">
+              <Form method="post">
+                <Button 
+                  type="submit"
+                  color="red"
+                  variant="filled"
+                  size="md"
+                >
+                  Logout
+                </Button>
+              </Form>
+              <Button 
+                component={Link} 
+                to="/"
+                variant="default"
+                size="md"
+              >
+                Never mind
+              </Button>
+            </Group>
+          </Stack>
+        </Paper>
+      </Container>
     );
   }

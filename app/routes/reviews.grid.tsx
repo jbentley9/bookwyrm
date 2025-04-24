@@ -34,58 +34,33 @@ type Review = {
   };
 };
 
-type LoaderData = {
-  reviews: Review[];
-  users: { id: string; name: string; }[];
-  books: { id: string; title: string; }[];
-};
-
 // Loader function to fetch all reviews
-export async function loader({ request }: Route.LoaderArgs) {
-  console.time('Total Loader Time');
-  
-  console.time('Fetch Reviews');
+export async function loader() {
   const reviews = await prisma.review.findMany({
     include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-        }
-      },
-      book: {
-        select: {
-          id: true,
-          title: true
-        }
-      }
+      user: true,
+      book: true,
     },
-    orderBy: {
-      createdAt: 'desc'
-    }
+    orderBy: [
+      { user: { name: 'asc' } },
+      { book: { title: 'asc' } }
+    ],
   });
-  console.timeEnd('Fetch Reviews');
 
-  console.time('Fetch Users');
   const users = await prisma.user.findMany({
     select: {
       id: true,
       name: true,
     }
   });
-  console.timeEnd('Fetch Users');
 
-  console.time('Fetch Books');
   const books = await prisma.book.findMany({
     select: {
       id: true,
       title: true,
     }
   });
-  console.timeEnd('Fetch Books');
 
-  console.timeEnd('Total Loader Time');
-  
   return { reviews, users, books };
 }
 
@@ -422,36 +397,51 @@ const customGridStyles = `
 `;
 
 export default function ReviewsGrid() {
-  console.time('Component Render');
+  
   const { reviews, users, books } = useLoaderData<typeof loader>();
-  console.timeEnd('Component Render');
+  
 
   // Memoize the column definitions to prevent re-renders
+  const defaultColDef = useMemo(() => ({
+    sortable: true,
+    filter: true,
+    resizable: true,
+    flex: 1,
+    minWidth: 100,
+    filterParams: {
+      buttons: ['reset', 'apply'],
+      closeOnApply: true,
+    },
+  }), []);
+
   const colDefs = useMemo<ColDef<Review>[]>(() => [
     { 
       field: 'book.title', 
       headerName: 'Book',
-      flex: 1,
-      minWidth: 200,
-      editable: false
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       field: 'user.name', 
       headerName: 'User',
-      flex: 1,
-      minWidth: 150,
-      editable: false
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       field: 'rating', 
       headerName: 'Rating',
       width: 100,
-      editable: true,
-      cellEditor: 'agNumberCellEditor',
-      cellEditorParams: {
-        min: 1,
-        max: 5
-      }
+      filter: 'agNumberColumnFilter',
+      filterParams: {
+        filterOptions: ['equals', 'lessThan', 'greaterThan'],
+        defaultOption: 'equals',
+      },
     },
     { 
       field: 'review', 
@@ -461,13 +451,11 @@ export default function ReviewsGrid() {
       maxWidth: 800,
       autoHeight: true,
       wrapText: true,
-      editable: true,
-      cellEditor: 'agLargeTextCellEditor',
-      cellEditorParams: {
-        maxLength: 1000,
-        rows: 10,
-        cols: 50
-      }
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
     },
     { 
       headerName: 'Actions',
@@ -491,12 +479,13 @@ export default function ReviewsGrid() {
   const [newRating, setNewRating] = useState<number>(1);
   const [newReview, setNewReview] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [quickFilterText, setQuickFilterText] = useState('');
 
   // Memoize the grid ready handler
   const onGridReady = useCallback((params: any) => {
-    console.time('Grid Ready');
+    ;
     setGridApi(params.api);
-    console.timeEnd('Grid Ready');
+    
   }, []);
 
   // Memoize the cell value changed handler
@@ -577,7 +566,7 @@ export default function ReviewsGrid() {
 
   // Start First Data Rendered timer
   useEffect(() => {
-    console.time('First Data Rendered');
+    
   }, []);
 
   // Add style tag to the document
@@ -609,25 +598,43 @@ export default function ReviewsGrid() {
         alignItems: 'center',
         flexShrink: 0
       }}>
-        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Book Reviews</h2>
-        <button
-          onClick={() => setIsModalOpen(true)}
-          style={{
-            background: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            padding: '8px 16px',
-            borderRadius: '4px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            fontSize: '14px'
-          }}
-        >
-          <IconPlus size={20} />
-          Add Review
-        </button>
+        <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 600 }}>Manage Reviews</h2>
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+          <input
+            type="text"
+            placeholder="Search all columns..."
+            value={quickFilterText}
+            onChange={(e) => {
+              setQuickFilterText(e.target.value);
+              gridApi?.setQuickFilter(e.target.value);
+            }}
+            style={{
+              padding: '8px 12px',
+              borderRadius: '4px',
+              border: '1px solid #ddd',
+              fontSize: '14px',
+              width: '200px'
+            }}
+          />
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              background: '#4CAF50',
+              color: 'white',
+              border: 'none',
+              padding: '8px 16px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '14px'
+            }}
+          >
+            <IconPlus size={20} />
+            Add Review
+          </button>
+        </div>
       </div>
 
       <div className="ag-theme-alpine" style={{ 
@@ -641,12 +648,7 @@ export default function ReviewsGrid() {
           ref={gridRef}
           rowData={reviews}
           columnDefs={colDefs}
-          defaultColDef={{
-            resizable: true,
-            sortable: true,
-            filter: true,
-            editable: false
-          }}
+          defaultColDef={defaultColDef}
           domLayout="normal"
           animateRows={false}
           rowHeight={48}
@@ -656,6 +658,7 @@ export default function ReviewsGrid() {
           pagination={true}
           paginationPageSize={20}
           paginationPageSizeSelector={[20, 50, 100]}
+          quickFilterText={quickFilterText}
           // Theme configuration
           theme="legacy"
           // Modern performance settings
@@ -681,9 +684,6 @@ export default function ReviewsGrid() {
           suppressCellFocus={true}
           enableCellTextSelection={true}
           onFirstDataRendered={() => {
-            console.timeEnd('First Data Rendered');
-            console.time('Grid Initialization Complete');
-            console.timeEnd('Grid Initialization Complete');
           }}
         />
       </div>
