@@ -265,6 +265,13 @@ function UpdateButtonRenderer(props: ICellRendererParams<Book>) {
   );
 }
 
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Manage Books | BookWyrm" },
+    { name: "description", content: "Manage and view all books in the BookWyrm system." },
+  ];
+}
+
 export default function BooksGrid() {
   console.time('Component Render');
   const { books } = useLoaderData<typeof loader>();

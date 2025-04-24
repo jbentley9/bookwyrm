@@ -12,6 +12,13 @@ import { ReviewCard } from "../components/ReviewCard";
 
 type SearchFilter = 'all' | 'book' | 'review' | 'user';
 
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "All Reviews | BookWyrm" },
+    { name: "description", content: "Browse and read all book reviews in the BookWyrm community." },
+  ];
+}
+
 export async function loader({ request }: Route.LoaderArgs) {
   const sessionUser = await getUser(request);
   let currentUser = null;

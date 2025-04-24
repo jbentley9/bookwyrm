@@ -362,6 +362,13 @@ const customGridStyles = `
   }
 `;
 
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Manage Users | BookWyrm" },
+    { name: "description", content: "Manage and view all users in the BookWyrm system." },
+  ];
+}
+
 export default function UsersGrid() {
   const { users } = useLoaderData<LoaderData>();
   const gridRef = useRef<AgGridReact>(null);

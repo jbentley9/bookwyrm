@@ -67,7 +67,7 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "BookWyrm" },
+    { title: "Home | BookWyrm" },
     { name: "description", content: "Welcome to BookWyrm - Your personal book review platform!" },
   ];
 }

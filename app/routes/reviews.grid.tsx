@@ -396,6 +396,13 @@ const customGridStyles = `
   }
 `;
 
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Manage Reviews | BookWyrm" },
+    { name: "description", content: "Manage and view all book reviews in the BookWyrm system." },
+  ];
+}
+
 export default function ReviewsGrid() {
   
   const { reviews, users, books } = useLoaderData<typeof loader>();

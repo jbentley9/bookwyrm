@@ -25,6 +25,13 @@ export async function action({
     });
   }
   
+export function meta({}: Route.MetaArgs) {
+  return [
+    { title: "Logout | BookWyrm" },
+    { name: "description", content: "Logout from your BookWyrm account." },
+  ];
+}
+
 export default function LogoutRoute() {
     return (
       <Container size="xs" py="xl">
