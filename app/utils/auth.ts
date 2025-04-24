@@ -19,6 +19,7 @@ export async function authenticateUser(email: string, password: string) {
     id: user.id,
     email: user.email,
     name: user.name,
+    isAdmin: user.isAdmin
   };
 }
 
@@ -29,6 +30,7 @@ export async function getUserById(id: string) {
       id: true,
       email: true,
       name: true,
+      isAdmin: true
     },
   });
 }

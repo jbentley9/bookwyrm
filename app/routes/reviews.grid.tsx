@@ -1,68 +1,63 @@
 import prisma from "../db";
 import type { Route } from "./+types/reviews.grid";
-import { AgGridReact } from "ag-grid-react";
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
-import type { ColDef, ICellRendererParams, ICellEditorParams, GridApi } from "ag-grid-community";
-import { useLoaderData, useActionData, Form, useLocation } from "react-router";
-import { IconPencil, IconTrash, IconPlus } from "@tabler/icons-react";
+import { useState, useCallback, useMemo } from "react";
+import type { ColDef, ICellRendererParams, GridReadyEvent, GridApi } from "ag-grid-community";
+import { useLoaderData } from "react-router";
+import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { v4 as uuidv4 } from 'uuid';
-import styles from './reviews.grid.module.css';
-
-ModuleRegistry.registerModules([AllCommunityModule]);
-
-type User = {
-  id: string;
-  name: string;
-};
-
-type Book = {
-  id: string;
-  title: string;
-};
+import { DataGrid } from "../components/DataGrid";
+import styles from '../components/DataGrid.module.css';
+import { getUser } from "../utils/auth-user";
+import { redirect } from "react-router";
 
 type Review = {
   id: string;
+  bookId: string;
+  userId: string;
   rating: number;
   review: string;
-  user: {
-    id: string;
-    name: string;
-  };
-  book: {
+  createdAt: Date;
+  updatedAt: Date;
+  book?: {
     id: string;
     title: string;
   };
+  user?: {
+    id: string;
+    name: string;
+  };
 };
 
-// Loader function to fetch all reviews
-export async function loader() {
-  const reviews = await prisma.review.findMany({
-    include: {
-      user: true,
-      book: true,
-    },
-    orderBy: [
-      { user: { name: 'asc' } },
-      { book: { title: 'asc' } }
-    ],
-  });
+// Loader function to fetch all reviews with related data
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getUser(request);
+  
+  if (!user || !user.isAdmin) {
+    return redirect("/login");
+  }
 
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-    }
-  });
-
-  const books = await prisma.book.findMany({
-    select: {
-      id: true,
-      title: true,
-    }
-  });
-
-  return { reviews, users, books };
+  const [reviews, books, users] = await Promise.all([
+    prisma.review.findMany({
+      orderBy: {
+        createdAt: 'desc'
+      },
+      include: {
+        book: true,
+        user: true
+      }
+    }),
+    prisma.book.findMany({
+      orderBy: {
+        title: 'asc'
+      }
+    }),
+    prisma.user.findMany({
+      orderBy: {
+        name: 'asc'
+      }
+    })
+  ]);
+  return { reviews, books, users };
 }
 
 // Action function to handle operations
@@ -73,42 +68,19 @@ export async function action({ request }: Route.ActionArgs) {
   switch (actionType) {
     case "create": {
       const id = formData.get("id") as string;
-      const rating = Number(formData.get("rating"));
-      const review = formData.get("review") as string;
-      const userId = formData.get("userId") as string;
       const bookId = formData.get("bookId") as string;
-      
-      if (!userId || !bookId) {
-        return new Response(JSON.stringify({ error: 'User and book are required' }), {
-          status: 400,
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-      }
+      const userId = formData.get("userId") as string;
+      const rating = parseInt(formData.get("rating") as string);
+      const review = formData.get("review") as string;
       
       try {
-        const newReview = await prisma.review.create({
-      data: {
+        await prisma.review.create({
+          data: {
             id,
-            rating,
-            review,
+            bookId,
             userId,
-            bookId
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            book: {
-              select: {
-                id: true,
-                title: true
-              }
-            }
+            rating,
+            review
           }
         });
         
@@ -130,23 +102,14 @@ export async function action({ request }: Route.ActionArgs) {
     }
     
     case "update": {
-      const reviewId = formData.get("reviewId") as string;
-      const rating = Number(formData.get("rating"));
+      const id = formData.get("id") as string;
+      const rating = parseInt(formData.get("rating") as string);
       const review = formData.get("review") as string;
       
-      await prisma.review.update({
-        where: { id: reviewId },
-        data: { rating, review }
-      });
-      break;
-    }
-    
-    case "delete": {
-      const reviewId = formData.get("reviewId") as string;
-      
       try {
-        await prisma.review.delete({
-          where: { id: reviewId }
+        await prisma.review.update({
+          where: { id },
+          data: { rating, review }
         });
         
         return new Response(JSON.stringify({ success: true }), {
@@ -156,14 +119,27 @@ export async function action({ request }: Route.ActionArgs) {
           }
         });
       } catch (error) {
-        console.error('Failed to delete review:', error);
-        return new Response(JSON.stringify({ error: 'Failed to delete review' }), {
+        console.error('Failed to update review:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update review' }), {
           status: 400,
           headers: {
             'Content-Type': 'application/json'
           }
         });
       }
+    }
+    
+    case "delete": {
+      const id = formData.get("id") as string;
+      await prisma.review.delete({
+        where: { id }
+      });
+      return new Response(JSON.stringify({ success: true }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
     }
   }
   
@@ -173,6 +149,16 @@ export async function action({ request }: Route.ActionArgs) {
       'Content-Type': 'application/json'
     }
   });
+}
+
+// Custom header component for editable columns
+function EditableHeaderRenderer(props: any) {
+  return (
+    <div className={styles.editableHeader}>
+      <IconPencil size={14} style={{ marginRight: '4px' }} />
+      <span>{props.displayName}</span>
+    </div>
+  );
 }
 
 // Custom cell renderer for delete button
@@ -186,7 +172,7 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
     
     const formData = new FormData();
     formData.append('actionType', 'delete');
-    formData.append('reviewId', data.id);
+    formData.append('id', data.id);
     
     try {
       const response = await fetch(window.location.href, {
@@ -211,303 +197,152 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
   return (
     <button 
       onClick={handleDelete}
-      className={styles.deleteButton}
+      className={styles.iconButton}
+      title="Delete"
     >
       <IconTrash size={16} />
-      Delete
     </button>
   );
 }
-
-// Custom cell renderer for update button
-function UpdateButtonRenderer(props: ICellRendererParams<Review>) {
-  const [isEditing, setIsEditing] = useState(false);
-  const gridApi = props.api;
-
-  useEffect(() => {
-    if (!gridApi) return;
-
-    const onCellEditingStarted = (event: any) => {
-      if (event.node === props.node) {
-        setIsEditing(true);
-      }
-    };
-
-    const onCellEditingStopped = (event: any) => {
-      if (event.node === props.node) {
-        setIsEditing(false);
-      }
-    };
-
-    gridApi.addEventListener('cellEditingStarted', onCellEditingStarted);
-    gridApi.addEventListener('cellEditingStopped', onCellEditingStopped);
-
-    return () => {
-      if (!gridApi.isDestroyed()) {
-        gridApi.removeEventListener('cellEditingStarted', onCellEditingStarted);
-        gridApi.removeEventListener('cellEditingStopped', onCellEditingStopped);
-      }
-    };
-  }, [gridApi, props.node]);
-
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setIsEditing(true);
-    gridApi?.startEditingCell({
-      rowIndex: props.node.rowIndex!,
-      colKey: 'rating'
-    });
-  };
-
-  const handleSave = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    gridApi?.stopEditing();
-    setIsEditing(false);
-  };
-
-  const buttonColor = isEditing ? '#4CAF50' : '#228be6';
-
-  return (
-    <button 
-      onClick={isEditing ? handleSave : handleEdit}
-      className={styles.updateButton}
-    >
-      <IconPencil size={16} />
-      {isEditing ? 'Save' : 'Edit'}
-    </button>
-  );
-}
-
-// Add custom CSS styles for AG Grid
-const customGridStyles = `
-  .ag-theme-alpine {
-    --ag-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-    --ag-font-size: 14px;
-    --ag-border-radius: 4px;
-    --ag-cell-horizontal-padding: 12px;
-    --ag-header-height: 48px;
-    --ag-row-height: 48px;
-    
-    /* Colors to match Mantine */
-    --ag-background-color: #ffffff;
-    --ag-header-background-color: #f8f9fa;
-    --ag-odd-row-background-color: #f8f9fa;
-    --ag-header-foreground-color: #212529;
-    --ag-foreground-color: #495057;
-    --ag-border-color: #e9ecef;
-    --ag-secondary-border-color: #e9ecef;
-    --ag-row-border-color: #e9ecef;
-    --ag-row-hover-color: #e9ecef;
-    --ag-selected-row-background-color: rgba(51, 154, 240, 0.1);
-    
-    /* Input styling */
-    --ag-input-border-color: #ced4da;
-    --ag-input-border-radius: 4px;
-    --ag-input-focus-border-color: #228be6;
-    
-    /* Disable alpine theme shadows */
-    --ag-card-shadow: none;
-    --ag-popup-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.1);
-  }
-
-  .ag-theme-alpine .ag-header-cell {
-    font-weight: 600;
-  }
-
-  .ag-theme-alpine .ag-cell {
-    line-height: 1.5;
-    display: flex;
-    align-items: center;
-  }
-
-  /* Special handling for the Actions column that contains buttons */
-  .ag-theme-alpine .ag-cell:last-child > div {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-  }
-
-  .ag-theme-alpine .ag-paging-panel {
-    border-top: 1px solid var(--ag-border-color);
-    padding: 12px;
-  }
-
-  .ag-theme-alpine .ag-paging-button {
-    border: 1px solid var(--ag-border-color);
-    border-radius: 4px;
-    padding: 4px 8px;
-    margin: 0 2px;
-  }
-
-  .ag-theme-alpine .ag-paging-button:hover:not(.ag-disabled) {
-    background-color: var(--ag-row-hover-color);
-  }
-
-  /* Ensure header cells are also vertically centered */
-  .ag-theme-alpine .ag-header-cell-label {
-    display: flex;
-    align-items: center;
-    height: 100%;
-  }
-`;
 
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Manage Reviews | BookWyrm" },
-    { name: "description", content: "Manage and view all book reviews in the BookWyrm system." },
+    { name: "description", content: "Manage and view all reviews in the BookWyrm system." },
   ];
 }
 
 export default function ReviewsGrid() {
-  
-  const { reviews, users, books } = useLoaderData<typeof loader>();
-  
-
-  // Memoize the column definitions to prevent re-renders
-  const defaultColDef = useMemo(() => ({
-    sortable: true,
-    filter: true,
-    resizable: true,
-    flex: 1,
-    minWidth: 100,
-    filterParams: {
-      buttons: ['reset', 'apply'],
-      closeOnApply: true,
-    },
-  }), []);
+  const { reviews, books, users } = useLoaderData<typeof loader>();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [newBookId, setNewBookId] = useState('');
+  const [newUserId, setNewUserId] = useState('');
+  const [newRating, setNewRating] = useState('');
+  const [newReview, setNewReview] = useState('');
+  const [gridApi, setGridApi] = useState<any>(null);
 
   const colDefs = useMemo<ColDef<Review>[]>(() => [
     { 
-      field: 'book.title', 
-      headerName: 'Book',
-      filter: 'agTextColumnFilter',
-      filterParams: {
-        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
-        defaultOption: 'contains',
-      },
-    },
-    { 
-      field: 'user.name', 
-      headerName: 'User',
-      filter: 'agTextColumnFilter',
-      filterParams: {
-        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
-        defaultOption: 'contains',
-      },
-    },
-    { 
-      field: 'rating', 
-      headerName: 'Rating',
-      width: 100,
-      editable: true,
-      filter: 'agNumberColumnFilter',
-      filterParams: {
-        filterOptions: ['equals', 'lessThan', 'greaterThan'],
-        defaultOption: 'equals',
-      },
-    },
-    { 
-      field: 'review', 
-      headerName: 'Review',
-      flex: 2,
-      minWidth: 300,
-      maxWidth: 800,
-      editable: true,
-      autoHeight: true,
-      wrapText: true,
-      filter: 'agTextColumnFilter',
-      filterParams: {
-        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
-        defaultOption: 'contains',
-      },
-    },
-    { 
-      headerName: 'Actions',
-      width: 120,
+      width: 32,
+      maxWidth: 32,
       cellRenderer: (params: ICellRendererParams<Review>) => (
         <div className={styles.actions}>
-          <UpdateButtonRenderer {...params} />
           <DeleteButtonRenderer {...params} />
         </div>
       ),
       sortable: false,
       filter: false,
       editable: false,
-      suppressSizeToFit: true
+      suppressSizeToFit: true,
+      suppressAutoSize: true,
+      headerName: '',
+      resizable: false
+    },
+    { 
+      field: 'book.title', 
+      headerName: 'Book',
+      editable: false,
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
+      flex: 1,
+      minWidth: 150
+    },
+    { 
+      field: 'user.name', 
+      headerName: 'User',
+      editable: false,
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
+      flex: 1,
+      minWidth: 120
+    },
+    { 
+      field: 'rating', 
+      headerName: 'Rating',
+      editable: true,
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['equals'],
+        defaultOption: 'equals',
+      },
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: [1, 2, 3, 4, 5]
+      },
+      valueFormatter: (params) => params.value?.toString() || '',
+      headerComponent: EditableHeaderRenderer,
+      width: 85,
+      maxWidth: 120,
+      suppressSizeToFit: true,
+      suppressAutoSize: true
+    },
+    { 
+      field: 'review', 
+      headerName: 'Review',
+      editable: true,
+      filter: 'agTextColumnFilter',
+      filterParams: {
+        filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
+        defaultOption: 'contains',
+      },
+      headerComponent: EditableHeaderRenderer,
+      flex: 2,
+      minWidth: 200,
+      wrapText: true,
+      autoHeight: true
     }
   ], []);
 
-  const gridRef = useRef<AgGridReact>(null);
-  const [gridApi, setGridApi] = useState<any>(null);
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [selectedBookId, setSelectedBookId] = useState<string>('');
-  const [newRating, setNewRating] = useState<number>(1);
-  const [newReview, setNewReview] = useState<string>('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [quickFilterText, setQuickFilterText] = useState('');
-
-  // Memoize the grid ready handler
-  const onGridReady = useCallback((params: any) => {
-    ;
-    setGridApi(params.api);
-    
-  }, []);
-
-  // Memoize the cell value changed handler
-  const onCellValueChanged = useCallback((params: any) => {
-    if (params.column.colId === 'rating' || params.column.colId === 'review') {
-      const formData = new FormData();
-      formData.append('actionType', 'update');
-      formData.append('reviewId', params.data.id);
-      formData.append('rating', params.data.rating);
-      formData.append('review', params.data.review);
-      
-      fetch(window.location.href, {
-        method: 'POST',
-        body: formData
-      });
-    }
-  }, []);
-
   // Reset form function
   const resetForm = () => {
-    setSelectedUserId('');
-    setSelectedBookId('');
-    setNewRating(1);
+    setNewBookId('');
+    setNewUserId('');
+    setNewRating('');
     setNewReview('');
   };
 
-  // Modified handleAddReview to close modal on success
+  // Handle adding new review
   const handleAddReview = async () => {
-    if (!selectedUserId || !selectedBookId) {
-      alert('Please select both a user and a book');
+    if (!newBookId || !newUserId || !newRating || !newReview) {
+      alert('Please fill in all required fields');
       return;
     }
 
-    const tempId = uuidv4();
-    const tempRow = {
-      id: tempId,
-      rating: newRating,
+    const id = uuidv4();
+    const selectedBook = books.find(book => book.id === newBookId);
+    const selectedUser = users.find(user => user.id === newUserId);
+    
+    const newRow = {
+      id,
+      bookId: newBookId,
+      userId: newUserId,
+      rating: parseInt(newRating),
       review: newReview,
-      user: users.find((u: User) => u.id === selectedUserId),
-      book: books.find((b: Book) => b.id === selectedBookId)
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      book: selectedBook,
+      user: selectedUser
     };
 
+    // Add the new review to the grid immediately
     gridApi?.applyTransaction({
-      add: [tempRow],
+      add: [newRow],
       addIndex: 0
     });
 
     const formData = new FormData();
     formData.append('actionType', 'create');
-    formData.append('id', tempId);
-    formData.append('rating', newRating.toString());
+    formData.append('id', id);
+    formData.append('bookId', newBookId);
+    formData.append('userId', newUserId);
+    formData.append('rating', newRating);
     formData.append('review', newReview);
-    formData.append('userId', selectedUserId);
-    formData.append('bookId', selectedBookId);
     
     try {
       const response = await fetch(window.location.href, {
@@ -519,97 +354,49 @@ export default function ReviewsGrid() {
         resetForm();
         setIsModalOpen(false);
       } else {
+        // Remove the row if the request fails
         gridApi?.applyTransaction({
-          remove: [tempRow]
+          remove: [newRow]
         });
         console.error('Failed to create review:', await response.text());
       }
     } catch (error) {
-      console.error('Failed to create review:', error);
+      // Remove the row if there's an error
       gridApi?.applyTransaction({
-        remove: [tempRow]
+        remove: [newRow]
       });
+      console.error('Failed to create review:', error);
     }
   };
 
-  // Start First Data Rendered timer
-  useEffect(() => {
-    
-  }, []);
-
-  // Add style tag to the document
-  useEffect(() => {
-    const styleTag = document.createElement('style');
-    styleTag.innerHTML = customGridStyles;
-    document.head.appendChild(styleTag);
-    return () => {
-      document.head.removeChild(styleTag);
-    };
+  const onCellValueChanged = useCallback((params: any) => {
+    if (params.column.colId === 'rating' || params.column.colId === 'review') {
+      const formData = new FormData();
+      formData.append('actionType', 'update');
+      formData.append('id', params.data.id);
+      formData.append('rating', params.data.rating);
+      formData.append('review', params.data.review);
+      
+      fetch(window.location.href, {
+        method: 'POST',
+        body: formData
+      });
+    }
   }, []);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Manage Reviews</h2>
-        <div className={styles.searchContainer}>
-          <input
-            type="text"
-            placeholder="Search all columns..."
-            value={quickFilterText}
-            onChange={(e) => {
-              setQuickFilterText(e.target.value);
-              gridApi?.setQuickFilter(e.target.value);
-            }}
-            className={styles.searchInput}
-          />
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className={styles.addButton}
-          >
-            <IconPlus size={20} />
-            Add Review
-          </button>
-        </div>
-      </div>
-
-      <div className={`ag-theme-alpine ${styles.gridContainer}`}>
-        <AgGridReact
-          ref={gridRef}
-          rowData={reviews}
-          columnDefs={colDefs}
-          defaultColDef={defaultColDef}
-          domLayout="normal"
-          animateRows={false}
-          rowHeight={48}
-          headerHeight={48}
-          onCellValueChanged={onCellValueChanged}
-          onGridReady={onGridReady}
-          pagination={true}
-          paginationPageSize={20}
-          paginationPageSizeSelector={[20, 50, 100]}
-          quickFilterText={quickFilterText}
-          theme="legacy"
-          cellSelection={false}
-          loading={false}
-          suppressColumnVirtualisation={true}
-          suppressRowTransform={true}
-          suppressContextMenu={true}
-          suppressRowVirtualisation={true}
-          suppressMovableColumns={true}
-          suppressColumnMoveAnimation={true}
-          suppressHorizontalScroll={false}
-          suppressNoRowsOverlay={true}
-          suppressFieldDotNotation={false}
-          suppressMenuHide={true}
-          suppressDragLeaveHidesColumns={true}
-          rowBuffer={20}
-          maxBlocksInCache={10}
-          suppressRowHoverHighlight={true}
-          suppressCellFocus={true}
-          enableCellTextSelection={true}
-          onFirstDataRendered={() => {}}
-        />
-      </div>
+    <>
+      <DataGrid
+        title="Manage Reviews"
+        data={reviews}
+        columnDefs={colDefs}
+        onAddClick={() => setIsModalOpen(true)}
+        addButtonLabel="Add Review"
+        onCellValueChanged={onCellValueChanged}
+        onGridReady={(params: GridReadyEvent) => {
+          setGridApi(params.api);
+        }}
+      />
 
       {isModalOpen && (
         <>
@@ -638,13 +425,16 @@ export default function ReviewsGrid() {
               <div>
                 <label className={styles.formLabel}>Select Book</label>
                 <select
-                  value={selectedBookId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedBookId(e.target.value)}
+                  value={newBookId}
+                  onChange={(e) => setNewBookId(e.target.value)}
                   className={styles.formSelect}
+                  required
                 >
                   <option value="">Choose a book</option>
-                  {books.map((book: Book) => (
-                    <option key={book.id} value={book.id}>{book.title}</option>
+                  {books.map((book) => (
+                    <option key={book.id} value={book.id}>
+                      {book.title}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -652,37 +442,44 @@ export default function ReviewsGrid() {
               <div>
                 <label className={styles.formLabel}>Select User</label>
                 <select
-                  value={selectedUserId}
-                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedUserId(e.target.value)}
+                  value={newUserId}
+                  onChange={(e) => setNewUserId(e.target.value)}
                   className={styles.formSelect}
+                  required
                 >
                   <option value="">Choose a user</option>
-                  {users.map((user: User) => (
-                    <option key={user.id} value={user.id}>{user.name}</option>
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
                 <label className={styles.formLabel}>Rating</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="5"
+                <select
                   value={newRating}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewRating(Number(e.target.value))}
-                  className={styles.formInput}
-                />
+                  onChange={(e) => setNewRating(e.target.value)}
+                  className={styles.formSelect}
+                  required
+                >
+                  {[1, 2, 3, 4, 5].map((rating) => (
+                    <option key={rating} value={rating}>
+                      {rating} {rating === 1 ? 'star' : 'stars'}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
                 <label className={styles.formLabel}>Review</label>
-                <input
-                  type="text"
+                <textarea
                   value={newReview}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewReview(e.target.value)}
-                  className={styles.formInput}
+                  onChange={(e) => setNewReview(e.target.value)}
+                  className={styles.formTextarea}
                   placeholder="Write your review"
+                  required
                 />
               </div>
 
@@ -696,8 +493,6 @@ export default function ReviewsGrid() {
           </div>
         </>
       )}
-    </div>
+    </>
   );
-}
-
-
+} 

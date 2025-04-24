@@ -1,16 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
-
-// Define the database connection
-// Adjust the provider and url as needed for your setup
-// datasource db {
-//   provider = "postgresql"
-//   url      = env("DATABASE_URL")
-// }
 
 datasource db {
   provider = "postgresql"
@@ -21,11 +11,12 @@ model User {
   id        String   @id @default(uuid())
   name      String
   email     String   @unique
-  password  String   // Will be hashed
+  password  String
   tier      UserTier @default(BASIC)
-  reviews   Review[]
+  isAdmin   Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  reviews   Review[]
 }
 
 model Book {
@@ -37,15 +28,15 @@ model Book {
 }
 
 model Review {
-  id      String   @id @default(uuid())
+  id        String   @id @default(uuid())
   rating    Int
-  review    String   @db.Text
-  user      User     @relation(fields: [userId], references: [id])
+  review    String
   userId    String
-  book      Book     @relation(fields: [bookId], references: [id])
   bookId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  book      Book     @relation(fields: [bookId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([bookId])
@@ -54,4 +45,4 @@ model Review {
 enum UserTier {
   BASIC
   PREMIER
-} 
+}

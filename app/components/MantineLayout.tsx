@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from "react-router";
-import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconWriting, IconLogout, IconApi, IconCode } from '@tabler/icons-react';
+import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconMessage, IconLogout, IconApi, IconCode } from '@tabler/icons-react';
 
 const theme = createTheme({
   primaryColor: 'blue',
@@ -84,6 +84,7 @@ interface MantineLayoutProps {
     name: string;
     email: string;
     tier?: string;
+    isAdmin: boolean;
   } | null;
 }
 
@@ -148,13 +149,13 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                   component={Link}
                   to="/all-reviews"
                   label="All Reviews"
-                  leftSection={<IconWriting size="1.2rem" stroke={1.5} />}
+                  leftSection={<IconMessage size="1.2rem" stroke={1.5} />}
                   style={{ padding: '12px 16px' }}
                   active={location.pathname === '/all-reviews'}
                 />
               </Stack>
 
-              {user && (
+              {user && user.isAdmin && (
                 <>
                   <Divider my="xs" />
                   <Box>
@@ -164,7 +165,7 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                         component={Link}
                         to="/reviews-grid"
                         label="Reviews"
-                        leftSection={<IconBook size="1.2rem" stroke={1.5} />}
+                        leftSection={<IconMessage size="1.2rem" stroke={1.5} />}
                         style={{ padding: '12px 16px' }}
                         active={location.pathname === '/reviews-grid'}
                       />

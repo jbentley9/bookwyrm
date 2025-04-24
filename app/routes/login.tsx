@@ -70,7 +70,8 @@ export async function action({ request }: Route.ActionArgs) {
         name,
         email,
         password, // Note: In a real app, you should hash the password
-        tier: 'BASIC' // Default tier
+        tier: 'BASIC', // Default tier
+        isAdmin: false // Default to non-admin
       }
     });
 
