@@ -1,4 +1,3 @@
-import prisma from "../db";
 import type { Route } from "./+types/books";
 import { AgGridReact } from "ag-grid-react";
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
@@ -23,12 +22,14 @@ type LoaderData = {
 
 // Loader function to fetch all books
 export async function loader() {
-  const books = await prisma.book.findMany({
-    orderBy: {
-      title: 'asc'
-    }
-  });
-  return { books };
+  try {
+    const response = await fetch("/api/books");
+    const data = await response.json();
+    return { books: data.books };
+  } catch (error) {
+    console.error("Error fetching books:", error);
+    return { books: [] };
+  }
 }
 
 // Action function to handle operations
@@ -44,15 +45,20 @@ export async function action({ request }: Route.ActionArgs) {
       const isbn = formData.get("isbn") as string;
       
       try {
-        await prisma.book.create({
-          data: {
-            id,
-            title,
-            author,
-            isbn
-          }
+        const createFormData = new FormData();
+        createFormData.append("title", title);
+        createFormData.append("author", author);
+        createFormData.append("isbn", isbn);
+
+        const response = await fetch("/api/books", {
+          method: "POST",
+          body: createFormData,
         });
-        
+
+        if (!response.ok) {
+          throw new Error("Failed to create book");
+        }
+
         return new Response(JSON.stringify({ success: true }), {
           status: 201,
           headers: {
@@ -76,21 +82,50 @@ export async function action({ request }: Route.ActionArgs) {
       const author = formData.get("author") as string;
       const isbn = formData.get("isbn") as string;
       
-      await prisma.book.update({
-        where: { id: bookId },
-        data: { title, author, isbn }
-      });
-      break;
+      try {
+        const updateFormData = new FormData();
+        updateFormData.append("title", title);
+        updateFormData.append("author", author);
+        updateFormData.append("isbn", isbn);
+
+        const response = await fetch(`/api/books/${bookId}`, {
+          method: "PUT",
+          body: updateFormData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update book");
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error('Failed to update book:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update book' }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
     }
     
     case "delete": {
       const bookId = formData.get("bookId") as string;
       
       try {
-        await prisma.book.delete({
-          where: { id: bookId }
+        const response = await fetch(`/api/books/${bookId}`, {
+          method: "DELETE",
         });
-        
+
+        if (!response.ok) {
+          throw new Error("Failed to delete book");
+        }
+
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: {

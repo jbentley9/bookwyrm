@@ -1,5 +1,6 @@
-import { Button, Stack, Text, TextInput, Group, Tabs, NumberInput } from "@mantine/core";
+import { Button, Stack, Text, TextInput, Group, Tabs, NumberInput, Paper, Code, Title, Alert, Badge, ActionIcon } from "@mantine/core";
 import { useState } from "react";
+import { IconInfoCircle, IconX } from '@tabler/icons-react';
 
 export default function ApiTest() {
   const [bookId, setBookId] = useState("");
@@ -13,24 +14,34 @@ export default function ApiTest() {
   const [reviewText, setReviewText] = useState("");
   
   const [response, setResponse] = useState("");
+  const [status, setStatus] = useState<number | null>(null);
+
+  const clearResponse = () => {
+    setResponse("");
+    setStatus(null);
+  };
 
   // Books API Tests
   const testGetAllBooks = async () => {
+    clearResponse();
     try {
       const res = await fetch("/api/books");
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
   };
 
   const testGetOneBook = async () => {
+    clearResponse();
     if (!bookId) return;
     try {
       const res = await fetch(`/api/books/${bookId}`);
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -50,6 +61,7 @@ export default function ApiTest() {
       });
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -69,6 +81,7 @@ export default function ApiTest() {
       });
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -82,6 +95,7 @@ export default function ApiTest() {
       });
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -93,6 +107,7 @@ export default function ApiTest() {
       const res = await fetch("/api/reviews");
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -104,6 +119,7 @@ export default function ApiTest() {
       const res = await fetch(`/api/reviews/${reviewId}`);
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -124,6 +140,7 @@ export default function ApiTest() {
       });
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -142,6 +159,7 @@ export default function ApiTest() {
       });
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
@@ -155,15 +173,28 @@ export default function ApiTest() {
       });
       const data = await res.json();
       setResponse(JSON.stringify(data, null, 2));
+      setStatus(res.status);
     } catch (error) {
       setResponse(`Error: ${error}`);
     }
   };
 
   return (
-    <Stack p="md">
-      <Text size="xl" fw={700}>API Test Page</Text>
-      
+    <Stack p="md" gap="lg">
+      <Group justify="space-between" align="center">
+        <Title order={2}>API Test Page</Title>
+        <Badge size="lg" variant="light" color="blue">Development Tools</Badge>
+      </Group>
+
+      <Alert 
+        icon={<IconInfoCircle size="1rem" />} 
+        title="API Testing Tool" 
+        color="blue" 
+        variant="light"
+      >
+        This page allows you to test all available API endpoints. The API is implemented using RESTful principles and supports CRUD operations for both books and reviews.
+      </Alert>
+
       <Tabs defaultValue="books">
         <Tabs.List>
           <Tabs.Tab value="books">Books API</Tabs.Tab>
@@ -171,109 +202,127 @@ export default function ApiTest() {
         </Tabs.List>
 
         <Tabs.Panel value="books" pt="xs">
-          <Stack>
+          <Stack gap="md">
             <Group>
-              <Button onClick={testGetAllBooks}>Test GET All Books</Button>
-              <Button onClick={testGetOneBook}>Test GET One Book</Button>
+              <Button onClick={testGetAllBooks} variant="light">GET /api/books</Button>
+              <Button onClick={testGetOneBook} variant="light">GET /api/books/:id</Button>
             </Group>
 
-            <Group>
-              <TextInput
-                label="Book ID"
-                value={bookId}
-                onChange={(e) => setBookId(e.target.value)}
-                placeholder="Enter book ID"
-              />
-              <TextInput
-                label="Title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Enter title"
-              />
-              <TextInput
-                label="Author"
-                value={author}
-                onChange={(e) => setAuthor(e.target.value)}
-                placeholder="Enter author"
-              />
-              <TextInput
-                label="ISBN"
-                value={isbn}
-                onChange={(e) => setIsbn(e.target.value)}
-                placeholder="Enter ISBN"
-              />
-            </Group>
-
-            <Group>
-              <Button onClick={testCreateBook}>Test Create Book</Button>
-              <Button onClick={testUpdateBook}>Test Update Book</Button>
-              <Button onClick={testDeleteBook}>Test Delete Book</Button>
-            </Group>
+            <Paper p="md" withBorder>
+              <Stack gap="md">
+                <Text size="sm" fw={500}>Book Data</Text>
+                <Group grow>
+                  <TextInput
+                    label="Book ID"
+                    value={bookId}
+                    onChange={(e) => setBookId(e.target.value)}
+                    placeholder="Enter book ID"
+                  />
+                  <TextInput
+                    label="Title"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter title"
+                  />
+                  <TextInput
+                    label="Author"
+                    value={author}
+                    onChange={(e) => setAuthor(e.target.value)}
+                    placeholder="Enter author"
+                  />
+                  <TextInput
+                    label="ISBN"
+                    value={isbn}
+                    onChange={(e) => setIsbn(e.target.value)}
+                    placeholder="Enter ISBN"
+                  />
+                </Group>
+                <Group>
+                  <Button onClick={testCreateBook} color="green">POST /api/books</Button>
+                  <Button onClick={testUpdateBook} color="blue">PUT /api/books/:id</Button>
+                  <Button onClick={testDeleteBook} color="red">DELETE /api/books/:id</Button>
+                </Group>
+              </Stack>
+            </Paper>
           </Stack>
         </Tabs.Panel>
 
         <Tabs.Panel value="reviews" pt="xs">
-          <Stack>
+          <Stack gap="md">
             <Group>
-              <Button onClick={testGetAllReviews}>Test GET All Reviews</Button>
-              <Button onClick={testGetOneReview}>Test GET One Review</Button>
+              <Button onClick={testGetAllReviews} variant="light">GET /api/reviews</Button>
+              <Button onClick={testGetOneReview} variant="light">GET /api/reviews/:id</Button>
             </Group>
 
-            <Group>
-              <TextInput
-                label="Review ID"
-                value={reviewId}
-                onChange={(e) => setReviewId(e.target.value)}
-                placeholder="Enter review ID"
-              />
-              <TextInput
-                label="Book ID"
-                value={bookId}
-                onChange={(e) => setBookId(e.target.value)}
-                placeholder="Enter book ID"
-              />
-              <TextInput
-                label="User ID"
-                value={userId}
-                onChange={(e) => setUserId(e.target.value)}
-                placeholder="Enter user ID"
-              />
-              <NumberInput
-                label="Rating"
-                value={rating}
-                onChange={(val) => setRating(val?.toString() || "")}
-                placeholder="Enter rating"
-                min={1}
-                max={5}
-              />
-              <TextInput
-                label="Review Text"
-                value={reviewText}
-                onChange={(e) => setReviewText(e.target.value)}
-                placeholder="Enter review text"
-                style={{ flex: 1 }}
-              />
-            </Group>
-
-            <Group>
-              <Button onClick={testCreateReview}>Test Create Review</Button>
-              <Button onClick={testUpdateReview}>Test Update Review</Button>
-              <Button onClick={testDeleteReview}>Test Delete Review</Button>
-            </Group>
+            <Paper p="md" withBorder>
+              <Stack gap="md">
+                <Text size="sm" fw={500}>Review Data</Text>
+                <Group grow>
+                  <TextInput
+                    label="Review ID"
+                    value={reviewId}
+                    onChange={(e) => setReviewId(e.target.value)}
+                    placeholder="Enter review ID"
+                  />
+                  <TextInput
+                    label="User ID"
+                    value={userId}
+                    onChange={(e) => setUserId(e.target.value)}
+                    placeholder="Enter user ID"
+                  />
+                  <NumberInput
+                    label="Rating"
+                    value={rating}
+                    onChange={(value) => setRating(value?.toString() || "")}
+                    placeholder="Enter rating (1-5)"
+                    min={1}
+                    max={5}
+                  />
+                </Group>
+                <TextInput
+                  label="Review Text"
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="Enter review text"
+                />
+                <Group>
+                  <Button onClick={testCreateReview} color="green">POST /api/reviews</Button>
+                  <Button onClick={testUpdateReview} color="blue">PUT /api/reviews/:id</Button>
+                  <Button onClick={testDeleteReview} color="red">DELETE /api/reviews/:id</Button>
+                </Group>
+              </Stack>
+            </Paper>
           </Stack>
         </Tabs.Panel>
       </Tabs>
 
-      <Text size="sm" fw={500}>Response:</Text>
-      <pre style={{ 
-        backgroundColor: "#f5f5f5", 
-        padding: "1rem", 
-        borderRadius: "4px",
-        overflow: "auto",
-        maxHeight: "300px"
-      }}>
-        {response || "No response yet"}
-      </pre>
+      {response && (
+        <Paper p="md" withBorder>
+          <Stack gap="xs">
+            <Group justify="space-between">
+              <Group>
+                <Text size="sm" fw={500}>Response</Text>
+                {status && (
+                  <Badge color={status >= 200 && status < 300 ? "green" : "red"}>
+                    Status: {status}
+                  </Badge>
+                )}
+              </Group>
+              <ActionIcon 
+                variant="light" 
+                color="gray" 
+                onClick={clearResponse}
+                title="Clear response"
+              >
+                <IconX size="1rem" />
+              </ActionIcon>
+            </Group>
+            <Code block style={{ whiteSpace: 'pre-wrap' }}>
+              {response}
+            </Code>
+          </Stack>
+        </Paper>
+      )}
     </Stack>
   );
 } 

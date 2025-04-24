@@ -36,32 +36,46 @@ type Review = {
 
 // Loader function to fetch all reviews
 export async function loader() {
-  const reviews = await prisma.review.findMany({
-    include: {
-      user: true,
-      book: true,
-    },
-    orderBy: [
-      { user: { name: 'asc' } },
-      { book: { title: 'asc' } }
-    ],
-  });
+  try {
+    const reviews = await prisma.review.findMany({
+      select: {
+        id: true,
+        rating: true,
+        review: true,
+        user: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        book: {
+          select: {
+            id: true,
+            title: true
+          }
+        }
+      }
+    });
 
-  const users = await prisma.user.findMany({
-    select: {
-      id: true,
-      name: true,
-    }
-  });
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true
+      }
+    });
 
-  const books = await prisma.book.findMany({
-    select: {
-      id: true,
-      title: true,
-    }
-  });
+    const books = await prisma.book.findMany({
+      select: {
+        id: true,
+        title: true
+      }
+    });
 
-  return { reviews, users, books };
+    return { reviews, users, books };
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return { reviews: [], users: [], books: [] };
+  }
 }
 
 // Action function to handle operations
@@ -87,30 +101,21 @@ export async function action({ request }: Route.ActionArgs) {
       }
       
       try {
-        const newReview = await prisma.review.create({
-      data: {
-            id,
-            rating,
-            review,
-            userId,
-            bookId
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            book: {
-              select: {
-                id: true,
-                title: true
-              }
-            }
-          }
+        const createFormData = new FormData();
+        createFormData.append("bookId", bookId);
+        createFormData.append("userId", userId);
+        createFormData.append("rating", rating.toString());
+        createFormData.append("review", review);
+
+        const response = await fetch("/api/reviews", {
+          method: "POST",
+          body: createFormData,
         });
-        
+
+        if (!response.ok) {
+          throw new Error("Failed to create review");
+        }
+
         return new Response(JSON.stringify({ success: true }), {
           status: 201,
           headers: {
@@ -133,21 +138,49 @@ export async function action({ request }: Route.ActionArgs) {
       const rating = Number(formData.get("rating"));
       const review = formData.get("review") as string;
       
-      await prisma.review.update({
-        where: { id: reviewId },
-        data: { rating, review }
-      });
-      break;
+      try {
+        const updateFormData = new FormData();
+        if (rating) updateFormData.append("rating", rating.toString());
+        if (review) updateFormData.append("review", review);
+
+        const response = await fetch(`/api/reviews/${reviewId}`, {
+          method: "PUT",
+          body: updateFormData,
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update review");
+        }
+
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error('Failed to update review:', error);
+        return new Response(JSON.stringify({ error: 'Failed to update review' }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
     }
     
     case "delete": {
       const reviewId = formData.get("reviewId") as string;
       
       try {
-        await prisma.review.delete({
-          where: { id: reviewId }
+        const response = await fetch(`/api/reviews/${reviewId}`, {
+          method: "DELETE",
         });
-        
+
+        if (!response.ok) {
+          throw new Error("Failed to delete review");
+        }
+
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: {
@@ -407,7 +440,6 @@ export default function ReviewsGrid() {
   
   const { reviews, users, books } = useLoaderData<typeof loader>();
   
-
   // Memoize the column definitions to prevent re-renders
   const defaultColDef = useMemo(() => ({
     sortable: true,

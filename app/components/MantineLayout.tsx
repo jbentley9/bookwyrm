@@ -18,7 +18,7 @@ import {
 } from "@mantine/core";
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from "react-router";
-import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconWriting, IconLogout } from '@tabler/icons-react';
+import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconWriting, IconLogout, IconApi } from '@tabler/icons-react';
 
 const theme = createTheme({
   primaryColor: 'blue',
@@ -183,6 +183,21 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                         leftSection={<IconUsers size="1.2rem" stroke={1.5} />}
                         style={{ padding: '12px 16px' }}
                         active={location.pathname === '/users-grid'}
+                      />
+                    </Stack>
+                  </Box>
+
+                  <Divider my="xs" />
+                  <Box>
+                    <Text size="sm" c="dimmed" fw={500} pl="md" mb="xs">Development</Text>
+                    <Stack gap={4}>
+                      <NavLink
+                        component={Link}
+                        to="/api-test"
+                        label="API Test"
+                        leftSection={<IconApi size="1.2rem" stroke={1.5} />}
+                        style={{ padding: '12px 16px' }}
+                        active={location.pathname === '/api-test'}
                       />
                     </Stack>
                   </Box>
