@@ -1,3 +1,13 @@
+/**
+ * Admin reviews management page.
+ * Provides a grid interface for managing book reviews with user and book associations.
+ * Features:
+ * - CRUD operations for reviews
+ * - Rating management (1-5 stars)
+ * - Book and user selection dropdowns
+ * - Sorting and filtering capabilities
+ * - Real-time grid updates
+ */
 import prisma from "../db";
 import type { Route } from "./+types/reviews.grid";
 import { useState, useCallback, useMemo } from "react";

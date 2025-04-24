@@ -1,3 +1,14 @@
+/**
+ * Reviews API endpoints.
+ * Provides REST API endpoints for managing book reviews.
+ * 
+ * Endpoints:
+ * - GET /api/reviews - List all reviews
+ * - GET /api/reviews/:id - Get a single review
+ * - POST /api/reviews - Create a new review
+ * - PUT /api/reviews/:id - Update a review
+ * - DELETE /api/reviews/:id - Delete a review
+ */
 import prisma from "../db";
 import type { RouteConfig } from "@react-router/dev/routes";
 

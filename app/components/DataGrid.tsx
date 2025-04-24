@@ -1,3 +1,8 @@
+/**
+ * Reusable data grid component built on AG Grid.
+ * Provides a consistent interface for displaying and managing tabular data.
+ * Includes sorting, filtering, and pagination features.
+ */
 import { AgGridReact } from "ag-grid-react";
 import { useState, useRef, useCallback, useMemo } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";

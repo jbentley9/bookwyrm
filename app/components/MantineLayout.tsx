@@ -1,3 +1,16 @@
+/**
+ * The main layout component that wraps the entire application.
+ * Handles the navigation sidebar, user authentication state, and routing.
+ * Uses Mantine's AppShell for the base layout structure with a responsive navbar.
+ * 
+ * The layout includes:
+ * - BookWyrm logo and branding
+ * - User profile section (when logged in)
+ * - Main navigation links (Home, All Reviews)
+ * - Admin section (Reviews, Books, Users management)
+ * - Development tools section (API Test)
+ * - Login/Logout button
+ */
 import {
   AppShell,
   MantineProvider,
@@ -20,6 +33,9 @@ import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from "react-router";
 import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconMessage, IconLogout, IconApi, IconCode } from '@tabler/icons-react';
 
+// Custom theme configuration for the entire app
+// Uses a blue primary color with Inter font family
+// Customizes AppShell and NavLink components with specific styles
 const theme = createTheme({
   primaryColor: 'blue',
   primaryShade: 6,
@@ -78,6 +94,8 @@ const theme = createTheme({
   },
 });
 
+// Props interface for the layout component
+// Expects a user object with basic profile info and admin status
 interface MantineLayoutProps {
   user: {
     id: string;
@@ -90,6 +108,7 @@ interface MantineLayoutProps {
 
 export default function MantineLayout({ user }: MantineLayoutProps) {
   const location = useLocation();
+  const [opened, { toggle }] = useDisclosure(false);
 
   return (
     <MantineProvider theme={theme}>
@@ -98,9 +117,11 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
         navbar={{ width: 280, breakpoint: 'sm' }}
         padding={0}
       >
+        {/* Left sidebar navigation */}
         <AppShellNavbar p="md">
           <Stack h="100%" justify="space-between">
             <Stack gap="xl">
+              {/* Logo and branding section */}
               <Box>
                 <UnstyledButton component={Link} to="/">
                   <Group>
@@ -136,6 +157,7 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                 )}
               </Box>
 
+              {/* Main navigation links - visible to all users */}
               <Stack gap="xs">
                 <NavLink
                   component={Link}
@@ -155,6 +177,7 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                 />
               </Stack>
 
+              {/* Admin section - only visible to admin users */}
               {user && user.isAdmin && (
                 <>
                   <Divider my="xs" />
@@ -190,6 +213,7 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                 </>
               )}
 
+              {/* Development tools section - visible to logged in users */}
               {user && (
                 <>
                   <Divider my="xs" />
@@ -210,6 +234,7 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
               )}
             </Stack>
 
+            {/* Bottom section with login/logout button */}
             <Box>
               <Divider mb="md" />
               <Button 

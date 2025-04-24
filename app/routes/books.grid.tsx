@@ -1,3 +1,8 @@
+/**
+ * Admin books management page.
+ * Provides a grid interface for managing the book catalog.
+ * Includes CRUD operations for books and cover image handling.
+ */
 import prisma from "../db";
 import type { Route } from "./+types/books.grid";
 import { useState, useCallback, useMemo } from "react";

@@ -1,5 +1,10 @@
+/**
+ * Root route component.
+ * Sets up the base HTML structure, meta tags, and global styles.
+ * Handles the root layout and error boundaries.
+ */
 import '@mantine/core/styles.css';
-//import { Notifications } from '@mantine/notifications';
+
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";

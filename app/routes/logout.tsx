@@ -1,3 +1,8 @@
+/**
+ * User logout handler.
+ * Clears the user session and redirects to the home page.
+ * Includes session destruction and secure cookie handling.
+ */
 import { getSession, destroySession } from "../sessions.server";
 import type { Route } from "./+types/logout";
 import { Form, Link, redirect } from "react-router";

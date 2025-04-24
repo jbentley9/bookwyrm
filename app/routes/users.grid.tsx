@@ -1,3 +1,8 @@
+/**
+ * Admin users management page.
+ * Provides a grid interface for managing user accounts and permissions.
+ * Includes CRUD operations for users and admin status management.
+ */
 import prisma from "../db";
 import type { Route } from "./+types/users.grid";
 import { useState, useCallback, useMemo } from "react";

@@ -1,3 +1,8 @@
+/**
+ * Utility to get the authenticated user from the session.
+ * Returns the user object if authenticated, otherwise returns null.
+ */
+
 import { getSession } from "../sessions.server";
 
 type User = {

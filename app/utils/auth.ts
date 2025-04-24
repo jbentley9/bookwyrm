@@ -1,3 +1,9 @@
+/**
+ * Authentication utilities for the application.
+ * Handles user authentication and session management.
+ * Passwords are plaintext in the database. In Productio I would use bcrypt for password hashing 
+ * and JWT for session tokens.
+ */
 import prisma from '../db';
 
 export async function authenticateUser(email: string, password: string) {

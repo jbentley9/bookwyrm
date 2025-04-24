@@ -1,3 +1,14 @@
+/**
+ * Books API endpoints.
+ * Provides REST API endpoints for managing the book catalog.
+ * 
+ * Endpoints:
+ * - GET /api/books - List all books
+ * - GET /api/books/:id - Get a single book
+ * - POST /api/books - Create a new book
+ * - PUT /api/books/:id - Update a book
+ * - DELETE /api/books/:id - Delete a book
+ */
 import prisma from "../db";
 import type { Route } from "./+types/books.api";
 

@@ -1,3 +1,8 @@
+/**
+ * Database schema for the BookWyrm application.
+ * Defines the data models and their relationships.
+ * Includes User, Book, and Review models with proper relations.
+ */
 generator client {
   provider = "prisma-client-js"
 }

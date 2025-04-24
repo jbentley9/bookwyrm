@@ -1,3 +1,8 @@
+/**
+ * Development tool for testing API endpoints.
+ * Provides a simple interface to test various API routes.
+ * Includes request/response visualization and error handling.
+ */
 import { Button, Stack, Text, TextInput, Group, Tabs, NumberInput, Paper, Title, Code, ActionIcon, Tooltip, Loader } from "@mantine/core";
 import { useState } from "react";
 import { IconTrash, IconCheck, IconX, IconRefresh, IconPlus } from "@tabler/icons-react";

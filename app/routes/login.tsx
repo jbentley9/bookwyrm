@@ -1,5 +1,9 @@
+/**
+ * User authentication page.
+ * Handles user login and registration.
+ * Includes form validation and session management.
+ */
 import '@mantine/core/styles.css';
-//import '@mantine/notifications/styles.css';
 import type { Route } from "./+types/login";
 import { Container, Title, Text, TextInput, PasswordInput, Button, Stack, Paper, Group, Center, Box, Tabs, rem } from "@mantine/core";
 import { data, redirect, useNavigate, useActionData, Form } from "react-router";
