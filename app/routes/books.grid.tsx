@@ -268,7 +268,7 @@ export default function BooksGrid() {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
         defaultOption: 'contains',
       },
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     },
     { 
       field: 'author', 
@@ -279,7 +279,7 @@ export default function BooksGrid() {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
         defaultOption: 'contains',
       },
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     },
     { 
       field: 'isbn', 
@@ -290,7 +290,7 @@ export default function BooksGrid() {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
         defaultOption: 'contains',
       },
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     }
   ], []);
 

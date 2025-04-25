@@ -1,37 +1,38 @@
-version: '3.8'
+# For development purposes only #
+# This is not a production-ready configuration #
+version: "3.9"
 
 services:
-  db:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: bookwyrm
-      POSTGRES_PASSWORD: bookwyrm
-      POSTGRES_DB: bookwyrm
+  bookwyrm-db:
+    image: postgres:16
+    restart: unless-stopped
     ports:
       - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bookwyrm
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bookwyrm"]
+      test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  app:
+  bookwyrm-app:
     build:
       context: .
-      target: development-dependencies-env
+    depends_on:
+      bookwyrm-db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@bookwyrm-db:5432/bookwyrm?schema=public
     volumes:
       - .:/app
-      - /app/node_modules
     ports:
       - "5173:5173"
-    environment:
-      DATABASE_URL: "postgresql://bookwyrm:bookwyrm@db:5432/bookwyrm?schema=public"
-    command: npm run dev
-    depends_on:
-      db:
-        condition: service_healthy
+    command: ./docker-entrypoint.sh
 
 volumes:
-  postgres_data: 
+  pgdata:

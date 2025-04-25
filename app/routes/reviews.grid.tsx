@@ -297,7 +297,7 @@ export default function ReviewsGrid() {
     { 
       field: 'book.title', 
       headerName: 'Book',
-      editable: false,
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
@@ -309,7 +309,7 @@ export default function ReviewsGrid() {
     { 
       field: 'user.name', 
       headerName: 'User',
-      editable: false,
+      editable: true,
       filter: 'agTextColumnFilter',
       filterParams: {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
@@ -332,7 +332,7 @@ export default function ReviewsGrid() {
         values: [1, 2, 3, 4, 5]
       },
       valueFormatter: (params) => params.value?.toString() || '',
-      headerComponent: EditableHeaderRenderer,
+      //headerComponent: EditableHeaderRenderer,
       width: 85,
       maxWidth: 120,
       suppressSizeToFit: true,
@@ -347,7 +347,7 @@ export default function ReviewsGrid() {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
         defaultOption: 'contains',
       },
-      headerComponent: EditableHeaderRenderer,
+      //headerComponent: EditableHeaderRenderer,
       flex: 2,
       minWidth: 200,
       wrapText: true,

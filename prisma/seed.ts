@@ -51,11 +51,14 @@ const reviewTemplates = [
 ];
 
 async function seed() {
-  // Clean the database
-  await db.review.deleteMany();
-  await db.book.deleteMany();
-  await db.user.deleteMany();
+  // Check if the database is already seeded
+  const usersExists = await db.user.findFirst();
+  if (usersExists) {
+    console.log('Database already seeded. Skipping seeding process.');
+    return;
+  }
 
+  console.log('Seeding database...');
   // Create users
   const createdUsers = await Promise.all(
     users.map(user => 
@@ -95,7 +98,7 @@ async function seed() {
 
   await Promise.all(reviews);
 
-  console.log('Database has been seeded with 10 users, 10 books, and 50 reviews. 🌱');
+  console.log('Database has been seeded with 10 users, 10 books, and 50 reviews.');
 }
 
 seed()

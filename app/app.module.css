@@ -70,6 +70,13 @@
   --ag-font-size: 14px;
   --ag-border-radius: 4px;
   --ag-cell-horizontal-padding: 12px;
+  --ag-header-column-separator-display: block;
+  --ag-header-column-separator-height: 100%;
+  --ag-header-column-separator-width: 1px;
+  --ag-header-column-separator-color: var(--ag-border-color);
+  --ag-header-column-resize-handle-display: block;
+  --ag-header-column-resize-handle-height: 100%;
+  --ag-header-column-resize-handle-width: 2px;
   --ag-header-height: 48px;
   --ag-row-height: 48px;
   --ag-background-color: #ffffff;
@@ -91,6 +98,7 @@
 
 :global(.ag-theme-alpine .ag-header-cell) {
   font-weight: 600;
+  padding: 0 12px;
 }
 
 :global(.ag-theme-alpine .ag-cell) {
@@ -123,9 +131,26 @@
 }
 
 :global(.ag-theme-alpine .ag-header-cell-label) {
-  display: flex;
-  align-items: center;
-  height: 100%;
+  padding: 0 8px;
+}
+
+:global(.ag-theme-alpine .ag-header-cell-menu-button) {
+  margin-left: 4px;
+  margin-right: 8px;
+}
+
+:global(.ag-theme-alpine .ag-header-cell-label .ag-header-cell-text) {
+  margin-right: 8px;
+}
+
+:global(.ag-theme-alpine .ag-header-cell-menu-button:hover) {
+  opacity: 1;
+}
+
+:global(.ag-theme-alpine .ag-header-cell-menu-button .ag-icon-menu) {
+  height: 16px;
+  line-height: 16px;
+  margin-top: -8px;
 }
 
 .modalOverlay {

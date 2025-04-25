@@ -306,7 +306,7 @@ export default function UsersGrid() {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
         defaultOption: 'contains',
       },
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     },
     { 
       field: 'email', 
@@ -317,7 +317,7 @@ export default function UsersGrid() {
         filterOptions: ['contains', 'equals', 'startsWith', 'endsWith'],
         defaultOption: 'contains',
       },
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     },
     { 
       field: 'tier', 
@@ -332,14 +332,14 @@ export default function UsersGrid() {
       cellEditorParams: {
         values: ['BASIC', 'PREMIER']
       },
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     },
     {
       field: 'isAdmin',
       headerName: 'Admin',
       editable: true,
       cellEditor: 'agCheckboxCellEditor',
-      headerComponent: EditableHeaderRenderer
+      //headerComponent: EditableHeaderRenderer
     }
   ], []);
 
