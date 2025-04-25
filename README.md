@@ -4,8 +4,13 @@ A book review management system built with React Router v7 Framework and Postgre
 
 ## Prerequisites
 
-- [Docker](https://www.docker.com/products/docker-desktop/)
+- [Docker](https://www.docker.com/products/docker-desktop/)*
 - [Git](https://git-scm.com/downloads)
+
+*If running in Windows, you may need to run:
+   ```bash
+    wsl --update
+   ```
 
 ## Quick Start
 
