@@ -19,8 +19,12 @@ A book review management system built with React Router v7 Framework and Postgre
    ```bash
    docker compose up
    ```
+3. Once the containers are running, the database will need to be seeded:
+    ```
+    docker compose exec bookwyrm-app sh -c "npx prisma migrate deploy && npx prisma db seed"
+    ```
 
-3. Once the containers are running, open your browser and visit:
+4. Once the containers are running, open your browser and visit:
    ```
    http://localhost:5173
    ```
