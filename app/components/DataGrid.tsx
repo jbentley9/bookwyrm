@@ -8,7 +8,7 @@ import { useState, useRef, useCallback, useMemo } from "react";
 import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import type { ColDef, GridReadyEvent, GridApi } from "ag-grid-community";
 import { IconPlus } from "@tabler/icons-react";
-import styles from './DataGrid.module.css';
+import styles from '../app.module.css';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 

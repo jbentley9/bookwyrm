@@ -1,7 +1,7 @@
 /**
  * Admin books management page.
  * Provides a grid interface for managing the book catalog.
- * Includes CRUD operations for books and cover image handling.
+ * Includes CRUD operations for books.
  */
 import prisma from "../db";
 import type { Route } from "./+types/books.grid";
@@ -11,7 +11,7 @@ import { useLoaderData } from "react-router";
 import { IconPencil, IconTrash } from "@tabler/icons-react";
 import { v4 as uuidv4 } from 'uuid';
 import { DataGrid } from "../components/DataGrid";
-import styles from '../components/DataGrid.module.css';
+import styles from '../app.module.css';
 import { getUser } from "../utils/auth-user";
 import { redirect } from "react-router";
 
