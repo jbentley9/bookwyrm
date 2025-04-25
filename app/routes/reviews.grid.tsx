@@ -155,15 +155,27 @@ export async function action({ request }: Route.ActionArgs) {
     
     case "delete": {
       const id = formData.get("id") as string;
-      await prisma.review.delete({
-        where: { id }
-      });
-      return new Response(JSON.stringify({ success: true }), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      
+      try {
+        await prisma.review.delete({
+          where: { id }
+        });
+        
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      } catch (error) {
+        console.error('Failed to delete review:', error);
+        return new Response(JSON.stringify({ error: 'Failed to delete review' }), {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+      }
     }
   }
   
@@ -209,10 +221,30 @@ function DeleteButtonRenderer(props: ICellRendererParams<Review>) {
           remove: [data]
         });
       } else {
-        console.error('Failed to delete review:', await response.text());
+        const errorData = await response.json();
+        // Show error notification
+        const notification = document.createElement('div');
+        notification.className = styles.errorNotification;
+        notification.textContent = errorData.error || 'Failed to delete review';
+        document.body.appendChild(notification);
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+          notification.remove();
+        }, 5000);
       }
     } catch (error) {
       console.error('Failed to delete review:', error);
+      // Show error notification
+      const notification = document.createElement('div');
+      notification.className = styles.errorNotification;
+      notification.textContent = 'Failed to delete review';
+      document.body.appendChild(notification);
+      
+      // Remove notification after 5 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
     }
   };
 

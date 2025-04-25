@@ -88,10 +88,30 @@ function DeleteButtonRenderer(props: ICellRendererParams<User>) {
           remove: [data]
         });
       } else {
-        console.error('Failed to delete user:', await response.text());
+        const errorData = await response.json();
+        // Show error notification
+        const notification = document.createElement('div');
+        notification.className = styles.errorNotification;
+        notification.textContent = errorData.error || 'Failed to delete user';
+        document.body.appendChild(notification);
+        
+        // Remove notification after 5 seconds
+        setTimeout(() => {
+          notification.remove();
+        }, 5000);
       }
     } catch (error) {
       console.error('Failed to delete user:', error);
+      // Show error notification
+      const notification = document.createElement('div');
+      notification.className = styles.errorNotification;
+      notification.textContent = 'Failed to delete user';
+      document.body.appendChild(notification);
+      
+      // Remove notification after 5 seconds
+      setTimeout(() => {
+        notification.remove();
+      }, 5000);
     }
   };
 
@@ -217,6 +237,19 @@ export async function action({ request }: Route.ActionArgs) {
         });
       } catch (error) {
         console.error('Failed to delete user:', error);
+        // Check for Prisma's foreign key constraint error
+        if (error instanceof Error && 
+            (error.message.includes('Review_userId_fkey') || 
+             error.message.includes('Foreign key constraint violated'))) {
+          return new Response(JSON.stringify({ 
+            error: 'Cannot delete user because they have associated reviews. Please delete their reviews first.' 
+          }), {
+            status: 400,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+        }
         return new Response(JSON.stringify({ error: 'Failed to delete user' }), {
           status: 400,
           headers: {
