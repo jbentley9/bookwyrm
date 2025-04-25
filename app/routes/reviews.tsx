@@ -3,7 +3,7 @@ import type { Route } from "./+types/reviews";
 import prisma from "../db"; 
 import { Container, Group, Stack, Title, Text } from "@mantine/core";
 import { useLoaderData, redirect } from "react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { getUser } from "../utils/auth-user";
 import { SearchBar } from "../components/SearchBar";
 import { ReviewFormModal } from "../components/ReviewFormModal";
@@ -105,12 +105,15 @@ export default function Reviews() {
   const [review, setReview] = useState("");
   const [bookId, setBookId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showMyReviews, setShowMyReviews] = useState(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    return urlParams.get('myReviews') === 'true';
-  });
+  const [showMyReviews, setShowMyReviews] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFilter, setSearchFilter] = useState<SearchFilter>('all');
+
+  // Check URL parameters after component mounts
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    setShowMyReviews(urlParams.get('myReviews') === 'true');
+  }, []);
 
   // Function to highlight search terms in text
   const highlightText = (text: string, search: string) => {
