@@ -57,7 +57,7 @@ If you prefer to run the application without Docker:
    ```bash
    # Create a PostgreSQL database named 'bookwyrm'
    # Then set your DATABASE_URL in .env:
-   DATABASE_URL="postgresql://username:password@localhost:5432/bookwyrm?schema=public"
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/bookwyrm?schema=public"
    ```
 
 5. Run database migrations:
