@@ -58,6 +58,7 @@ export async function action({ request }: Route.ActionArgs) {
     const name = formData.get('name') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const isAdmin = formData.get('isAdmin') === 'true';
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -73,9 +74,9 @@ export async function action({ request }: Route.ActionArgs) {
       data: {
         name,
         email,
-        password, // Note: In a real app, you should hash the password
-        tier: 'BASIC', // Default tier
-        isAdmin: false // Default to non-admin
+        password,
+        tier: 'BASIC',
+        isAdmin
       }
     });
 
@@ -254,14 +255,30 @@ export default function Login() {
                   required
                   radius="md"
                   size="md"
-                  styles={{
-                    input: {
-                      '&:focus': {
-                        borderColor: 'var(--mantine-color-blue-6)',
-                      },
-                    },
-                  }}
                 />
+                <Box 
+                  style={{ 
+                    padding: '10px',
+                    backgroundColor: 'var(--mantine-color-yellow-0)',
+                    borderRadius: '4px',
+                    border: '1px solid var(--mantine-color-yellow-3)'
+                  }}
+                >
+                  <Group align="flex-start" gap="sm">
+                    <input 
+                      type="checkbox" 
+                      name="isAdmin" 
+                      value="true"
+                      style={{ marginTop: '4px' }}
+                    />
+                    <div>
+                      <Text size="sm" fw={500} mb={4}>Admin Account</Text>
+                      <Text size="xs" c="dimmed">
+                        For testing purposes only.
+                      </Text>
+                    </div>
+                  </Group>
+                </Box>
                 <Button 
                   type="submit" 
                   fullWidth 

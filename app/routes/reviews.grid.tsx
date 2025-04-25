@@ -84,6 +84,7 @@ export async function action({ request }: Route.ActionArgs) {
       const review = formData.get("review") as string;
       
       try {
+        // First, create the review
         await prisma.review.create({
           data: {
             id,
@@ -93,6 +94,19 @@ export async function action({ request }: Route.ActionArgs) {
             review
           }
         });
+
+        // Check if this is the user's 3rd review
+        const userReviews = await prisma.review.count({
+          where: { userId }
+        });
+
+        // If this is the 3rd review, update user tier to PREMIER
+        if (userReviews >= 3) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: { tier: 'PREMIER' }
+          });
+        }
         
         return new Response(JSON.stringify({ success: true }), {
           status: 201,

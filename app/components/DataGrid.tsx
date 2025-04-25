@@ -9,6 +9,8 @@ import { AllCommunityModule, ModuleRegistry } from "ag-grid-community";
 import type { ColDef, GridReadyEvent, GridApi } from "ag-grid-community";
 import { IconPlus } from "@tabler/icons-react";
 import styles from '../app.module.css';
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 

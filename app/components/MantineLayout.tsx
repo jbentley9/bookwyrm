@@ -28,10 +28,11 @@ import {
   Collapse,
   Divider,
   Box,
+  Badge,
 } from "@mantine/core";
 import { useDisclosure } from '@mantine/hooks';
 import { Link, Outlet, useLocation } from "react-router";
-import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconMessage, IconLogout, IconApi, IconCode } from '@tabler/icons-react';
+import { IconHome, IconBook, IconUser, IconUsers, IconChevronDown, IconChevronRight, IconMessage, IconLogout, IconApi, IconCode, IconCrown } from '@tabler/icons-react';
 
 // Custom theme configuration for the entire app
 // Uses a blue primary color with Inter font family
@@ -140,17 +141,52 @@ export default function MantineLayout({ user }: MantineLayoutProps) {
                 </UnstyledButton>
                 {user && (
                   <Box mt="md" p="md" style={{
-                    borderRadius: '8px',
-                    background: 'linear-gradient(135deg, rgba(34, 139, 230, 0.1) 0%, rgba(21, 170, 191, 0.1) 100%)',
-                    border: '1px solid rgba(34, 139, 230, 0.1)',
+                    borderRadius: '12px',
+                    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.9) 100%)',
+                    border: '1px solid rgba(34, 139, 230, 0.15)',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.05)',
                   }}>
-                    <Group>
-                      <Avatar color="blue" radius="xl">
-                        <IconUser size="1.5rem" />
+                    <Group wrap="nowrap">
+                      <Avatar 
+                        color="blue" 
+                        radius="xl"
+                        size="lg"
+                        style={{
+                          border: '2px solid rgba(34, 139, 230, 0.2)',
+                        }}
+                      >
+                        {user.name.charAt(0)}
                       </Avatar>
-                      <div>
-                        <Text size="sm" c="dimmed">Welcome back,</Text>
-                        <Text fw={500}>{user.name}</Text>
+                      <div style={{ flex: 1 }}>
+                        <Text size="xs" c="dimmed" mb={2}>Welcome,</Text>
+                        <Group gap="xs" wrap="nowrap" align="center">
+                          <Text fw={600} size="sm" style={{ lineHeight: 1.2 }}>{user.name}</Text>
+                          {user.tier === 'PREMIER' && (
+                            <IconCrown 
+                              size={16} 
+                              style={{ 
+                                color: '#fab005',
+                                filter: 'drop-shadow(0 1px 1px rgba(0,0,0,0.1))'
+                              }} 
+                            />
+                          )}
+                        </Group>
+                        {user.isAdmin && (
+                          <Badge 
+                            variant="light" 
+                            color="blue"
+                            size="xs"
+                            mt={4}
+                            style={{ 
+                              textTransform: 'none',
+                              letterSpacing: '0.3px',
+                              background: 'rgba(34, 139, 230, 0.1)',
+                              border: '1px solid rgba(34, 139, 230, 0.2)',
+                            }}
+                          >
+                            Admin
+                          </Badge>
+                        )}
                       </div>
                     </Group>
                   </Box>

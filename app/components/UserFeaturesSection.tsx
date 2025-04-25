@@ -23,7 +23,7 @@ export function UserFeaturesSection({ currentUser }: UserFeaturesSectionProps) {
             </Text>
             <Button
               component={Link}
-              to="/all-reviews"
+              to="/all-reviews?myReviews=true"
               variant="light"
               fullWidth
             >

@@ -26,7 +26,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (sessionUser) {
     currentUser = await prisma.user.findUnique({
       where: { email: sessionUser.email },
-      select: { id: true, name: true, email: true }
+      select: { id: true, name: true, email: true, tier: true }
     });
   }
 
@@ -35,7 +35,8 @@ export async function loader({ request }: Route.LoaderArgs) {
       include: {
         user: {
           select: {
-            name: true
+            name: true,
+            tier: true
           }
         },
         book: {
@@ -58,56 +59,42 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export async function action({ request }: Route.ActionArgs) {
   const formData = await request.formData();
-  const userId = formData.get("userId") as string;
   const bookId = formData.get("bookId") as string;
-  const rating = Number(formData.get("rating"));
+  const rating = parseInt(formData.get("rating") as string);
   const review = formData.get("review") as string;
-
-  if (!userId || !bookId || !rating || !review) {
-    return new Response(JSON.stringify({ error: 'All fields are required' }), {
-      status: 400,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
-
-  // Check if user already has a review for this book
-  const existingReview = await prisma.review.findFirst({
-    where: {
-      userId,
-      bookId
-    }
-  });
-
-  if (existingReview) {
-    return new Response(JSON.stringify({ error: 'You have already reviewed this book' }), {
-      status: 400,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  }
+  const userId = formData.get("userId") as string;
 
   try {
-    await prisma.review.create({
+    // First, create the review
+    const newReview = await prisma.review.create({
       data: {
-        userId,
         bookId,
+        userId,
         rating,
-        review
-      }
+        review,
+      },
     });
+
+    // Check if this is the user's 3rd review
+    const userReviews = await prisma.review.count({
+      where: { userId }
+    });
+
+    // If this is the 3rd review, update user tier to PREMIER
+    if (userReviews >= 3) {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { tier: 'PREMIER' }
+      });
+    }
 
     return redirect("/all-reviews");
   } catch (error) {
-    console.error('Failed to create review:', error);
-    return new Response(JSON.stringify({ error: 'Failed to create review' }), {
-      status: 400,
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    console.error("Error creating review:", error);
+    return new Response(
+      JSON.stringify({ error: "Failed to create review" }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
 
@@ -118,7 +105,10 @@ export default function Reviews() {
   const [review, setReview] = useState("");
   const [bookId, setBookId] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [showMyReviews, setShowMyReviews] = useState(false);
+  const [showMyReviews, setShowMyReviews] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('myReviews') === 'true';
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [searchFilter, setSearchFilter] = useState<SearchFilter>('all');
 
@@ -236,7 +226,10 @@ export default function Reviews() {
               key={review.id}
               review={{
                 ...review,
-                user: { name: review.user.name },
+                user: { 
+                  name: review.user.name,
+                  tier: review.user.tier
+                },
                 book: { title: review.book.title }
               }}
             />

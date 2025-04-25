@@ -5,10 +5,6 @@
  */
 import '@mantine/core/styles.css';
 
-
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
-
 import {
   Links,
   Meta,
@@ -19,11 +15,11 @@ import {
   useLocation,
   useLoaderData,
 } from "react-router";
-import { ColorSchemeScript, mantineHtmlProps } from "@mantine/core";
-import { useEffect } from "react";
+import { ColorSchemeScript, mantineHtmlProps, LoadingOverlay, MantineProvider } from "@mantine/core";
+import { useEffect, useState } from "react";
 import { getUser } from './utils/auth-user';
 import MantineLayout from './components/MantineLayout';
-import ReviewsGridLayout from './components/ReviewsGridLayout';
+import prisma from './db';
 
 import type { Route } from "./+types/root";
 
@@ -41,26 +37,62 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export async function loader({ request }: Route.LoaderArgs) {
-  const user = await getUser(request);
+  const sessionUser = await getUser(request);
+  let user = null;
+
+  if (sessionUser) {
+    user = await prisma.user.findUnique({
+      where: { email: sessionUser.email },
+      select: { id: true, name: true, email: true, tier: true, isAdmin: true }
+    });
+  }
+
   return { user };
 }
 
-export default function Layout() {
+function AppContent() {
   const { user } = useLoaderData();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isHydrated, setIsHydrated] = useState(false);
 
-
+  // Mark initial hydration
   useEffect(() => {
-    const storedUser = sessionStorage.getItem('user');
-    if (storedUser) {
-      try {
-        JSON.parse(storedUser);
-      } catch (e) {
-        console.error('Error parsing user:', e);
-      }
-    }
+    setIsHydrated(true);
   }, []);
 
+  // Wait for full hydration and interactivity
+  useEffect(() => {
+    if (!isHydrated) return;
 
+    let timeoutId: NodeJS.Timeout;
+    const checkReady = () => {
+      // Check if the document is fully interactive
+      if (document.readyState === 'complete') {
+        // Give a small additional delay to ensure React is fully hydrated
+        setTimeout(() => setIsLoading(false), 100);
+      } else {
+        timeoutId = setTimeout(checkReady, 50);
+      }
+    };
+
+    checkReady();
+    return () => clearTimeout(timeoutId);
+  }, [isHydrated]);
+
+  return (
+    <div style={{ position: 'relative', minHeight: '100vh' }}>
+      <LoadingOverlay
+        visible={isLoading}
+        zIndex={1000}
+        overlayProps={{ radius: "sm", blur: 2 }}
+        loaderProps={{ size: 'xl', color: 'blue' }}
+      />
+      <MantineLayout user={user} />
+    </div>
+  );
+}
+
+export default function Layout() {
   return (
     <html lang="en" {...mantineHtmlProps}>
       <head>
@@ -71,7 +103,9 @@ export default function Layout() {
         <Links />
       </head>
       <body>
-        <MantineLayout user={user} />
+        <MantineProvider>
+          <AppContent />
+        </MantineProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
