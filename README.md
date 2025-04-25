@@ -1,87 +1,86 @@
-# Welcome to React Router!
+# BookWyrm
 
-A modern, production-ready template for building full-stack React applications using React Router.
+A book review management system built with React Router v7 Framework and PostgreSQL.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+## Prerequisites
 
-## Features
+- [Docker](https://www.docker.com/products/docker-desktop/)
+- [Git](https://git-scm.com/downloads)
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+## Quick Start
 
-## Getting Started
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/jbentley9/bookwyrm.git
+   cd bookwyrm
+   ```
 
-### Installation
+2. Start the application with Docker:
+   ```bash
+   docker compose up
+   ```
 
-Install the dependencies:
+3. Once the containers are running, open your browser and visit:
+   ```
+   http://localhost:5173
+   ```
 
+That's it! The application should now be running with a PostgreSQL database.
+
+## Manual Setup (Without Docker)
+
+If you prefer to run the application without Docker:
+
+1. Install dependencies:
+   - Node.js 18 or later
+   - PostgreSQL 16 or later
+
+2. Clone the repository:
+   ```bash
+   git clone https://github.com/jbentley9/bookwyrm.git
+   cd bookwyrm
+   ```
+
+3. Install npm packages:
+   ```bash
+   npm install
+   ```
+
+4. Set up your database:
+   ```bash
+   # Create a PostgreSQL database named 'bookwyrm'
+   # Then set your DATABASE_URL in .env:
+   DATABASE_URL="postgresql://username:password@localhost:5432/bookwyrm?schema=public"
+   ```
+
+5. Run database migrations:
+   ```bash
+   npx prisma migrate deploy
+   ```
+
+6. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+7. Open your browser and visit:
+   ```
+   http://localhost:5173
+   ```
+
+## Default Login
+
+After setup, you can register an admin account here:
+   ```
+   http://localhost:5173/login
+   ```
+
+## Stopping the Application
+
+If using Docker:
 ```bash
-npm install
+docker compose down
 ```
 
-### Development
-
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+If running manually:
+- Press `Ctrl+C` in the terminal running the server
