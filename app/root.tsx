@@ -22,6 +22,7 @@ import { getUser } from './utils/auth-user';
 import MantineLayout from './components/MantineLayout';
 import prisma from './db';
 import { IconAlertCircle, IconRefresh } from '@tabler/icons-react';
+import { theme } from './theme';
 
 import type { Route } from "./+types/root";
 
@@ -75,40 +76,38 @@ function ErrorDisplay() {
   }
 
   return (
-    <MantineProvider>
-      <div style={{ 
-        position: 'fixed', 
-        top: 0, 
-        left: 0, 
-        right: 0, 
-        bottom: 0, 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: 'var(--mantine-color-body)'
-      }}>
-        <Stack w={400} gap="md" p="xl">
-          <Alert
-            variant="filled"
-            color="red"
-            title={title}
-            icon={<IconAlertCircle size={24} />}
-          >
-            <Text size="sm" mb="md">{message}</Text>
-            {isClient && (
-              <Button
-                variant="white"
-                onClick={() => window.location.reload()}
-                leftSection={<IconRefresh size={16} />}
-                fullWidth
-              >
-                Try Again
-              </Button>
-            )}
-          </Alert>
-        </Stack>
-      </div>
-    </MantineProvider>
+    <div style={{ 
+      position: 'fixed', 
+      top: 0, 
+      left: 0, 
+      right: 0, 
+      bottom: 0, 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      backgroundColor: 'var(--mantine-color-body)'
+    }}>
+      <Stack w={400} gap="md" p="xl">
+        <Alert
+          variant="filled"
+          color="red"
+          title={title}
+          icon={<IconAlertCircle size={24} />}
+        >
+          <Text size="sm" mb="md">{message}</Text>
+          {isClient && (
+            <Button
+              variant="white"
+              onClick={() => window.location.reload()}
+              leftSection={<IconRefresh size={16} />}
+              fullWidth
+            >
+              Try Again
+            </Button>
+          )}
+        </Alert>
+      </Stack>
+    </div>
   );
 }
 
@@ -202,7 +201,7 @@ export default function Layout() {
         <Links />
       </head>
       <body>
-        <MantineProvider>
+        <MantineProvider theme={theme}>
           <AppContent />
         </MantineProvider>
         <ScrollRestoration />
